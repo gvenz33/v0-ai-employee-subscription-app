@@ -2,8 +2,8 @@ export interface Plan {
   id: string
   name: string
   description: string
-  priceInCents: number
-  interval: "month"
+  monthlyPriceInCents: number
+  annualPriceInCents: number // 2 months free = 10 months worth
   features: string[]
   limits: {
     aiEmployees: number
@@ -15,11 +15,11 @@ export interface Plan {
 
 export const PLANS: Plan[] = [
   {
-    id: "free",
+    id: "starter",
     name: "Starter",
     description: "Get started with AI employees for basic tasks",
-    priceInCents: 0,
-    interval: "month",
+    monthlyPriceInCents: 1900, // $19/month
+    annualPriceInCents: 19000, // $190/year (10 months, 2 months free)
     features: [
       "3 AI Employees",
       "50 tasks per month",
@@ -37,8 +37,8 @@ export const PLANS: Plan[] = [
     id: "pro",
     name: "Professional",
     description: "Scale your business with advanced AI capabilities",
-    priceInCents: 4900,
-    interval: "month",
+    monthlyPriceInCents: 4900, // $49/month
+    annualPriceInCents: 49000, // $490/year (10 months, 2 months free)
     popular: true,
     features: [
       "10 AI Employees",
@@ -59,8 +59,8 @@ export const PLANS: Plan[] = [
     id: "enterprise",
     name: "Enterprise",
     description: "Unlimited access for maximum productivity",
-    priceInCents: 14900,
-    interval: "month",
+    monthlyPriceInCents: 14900, // $149/month
+    annualPriceInCents: 149000, // $1490/year (10 months, 2 months free)
     features: [
       "Unlimited AI Employees",
       "Unlimited tasks",
@@ -80,26 +80,54 @@ export const PLANS: Plan[] = [
   },
 ]
 
+// For Stripe subscription products - maps plan IDs to billing intervals
+export const SUBSCRIPTION_PLANS = PLANS.map(plan => ({
+  ...plan,
+  priceInCents: plan.monthlyPriceInCents, // Default to monthly for backward compatibility
+}))
+
+export function getPlanById(id: string): Plan | undefined {
+  return PLANS.find((plan) => plan.id === id)
+}
+
+export function getPriceInCents(planId: string, interval: 'month' | 'year'): number {
+  const plan = getPlanById(planId)
+  if (!plan) return 0
+  return interval === 'year' ? plan.annualPriceInCents : plan.monthlyPriceInCents
+}
+
+export function getAnnualSavings(planId: string): number {
+  const plan = getPlanById(planId)
+  if (!plan) return 0
+  const monthlyCostForYear = plan.monthlyPriceInCents * 12
+  return monthlyCostForYear - plan.annualPriceInCents
+}
+
+export function canAccessEmployee(userTier: string, requiredTier: string): boolean {
+  const tierOrder = ["starter", "pro", "enterprise"]
+  return tierOrder.indexOf(userTier) >= tierOrder.indexOf(requiredTier)
+}
+
 export const AI_EMPLOYEE_CATALOG = [
   {
     name: "Sales Sage",
     role: "Sales Assistant",
     description: "Automates outreach, qualifies leads, and manages your sales pipeline with precision.",
-    tier_required: "free",
+    tier_required: "starter",
     icon: "TrendingUp",
   },
   {
     name: "Content Creator",
     role: "Content Writer",
     description: "Generates blog posts, social media content, and marketing copy tailored to your brand.",
-    tier_required: "free",
+    tier_required: "starter",
     icon: "PenTool",
   },
   {
     name: "Data Analyst",
     role: "Analytics Expert",
     description: "Processes data, generates reports, and provides actionable business insights.",
-    tier_required: "free",
+    tier_required: "starter",
     icon: "BarChart3",
   },
   {
@@ -166,12 +194,3 @@ export const AI_EMPLOYEE_CATALOG = [
     icon: "Shield",
   },
 ]
-
-export function getPlanById(id: string): Plan | undefined {
-  return PLANS.find((plan) => plan.id === id)
-}
-
-export function canAccessEmployee(userTier: string, requiredTier: string): boolean {
-  const tierOrder = ["free", "pro", "enterprise"]
-  return tierOrder.indexOf(userTier) >= tierOrder.indexOf(requiredTier)
-}

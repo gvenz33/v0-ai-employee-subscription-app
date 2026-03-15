@@ -16,15 +16,16 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 interface CheckoutProps {
   planId: string
   planName: string
+  interval?: 'month' | 'year'
   onClose: () => void
 }
 
-export function Checkout({ planId, planName, onClose }: CheckoutProps) {
+export function Checkout({ planId, planName, interval = 'month', onClose }: CheckoutProps) {
   const [error, setError] = useState<string | null>(null)
 
   const fetchClientSecret = useCallback(async () => {
     try {
-      const result = await createCheckoutSession(planId)
+      const result = await createCheckoutSession(planId, interval)
       if (!result.clientSecret) {
         throw new Error('Failed to create checkout session')
       }
@@ -33,7 +34,7 @@ export function Checkout({ planId, planName, onClose }: CheckoutProps) {
       setError(err instanceof Error ? err.message : 'An error occurred')
       throw err
     }
-  }, [planId])
+  }, [planId, interval])
 
   const options = { fetchClientSecret }
 
@@ -59,7 +60,9 @@ export function Checkout({ planId, planName, onClose }: CheckoutProps) {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Subscribe to {planName}</CardTitle>
-            <CardDescription>Complete your purchase securely</CardDescription>
+            <CardDescription>
+              {interval === 'year' ? 'Annual billing (2 months free)' : 'Monthly billing'}
+            </CardDescription>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />

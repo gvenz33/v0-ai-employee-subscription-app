@@ -2,9 +2,9 @@
 
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
-import { SUBSCRIPTION_PLANS } from '@/lib/products'
+import { PLANS, getPriceInCents } from '@/lib/products'
 
-export async function createCheckoutSession(planId: string) {
+export async function createCheckoutSession(planId: string, interval: 'month' | 'year' = 'month') {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -12,12 +12,13 @@ export async function createCheckoutSession(planId: string) {
     throw new Error('You must be logged in to subscribe')
   }
 
-  const plan = SUBSCRIPTION_PLANS.find(p => p.id === planId)
+  const plan = PLANS.find(p => p.id === planId)
   if (!plan) {
     throw new Error('Plan not found')
   }
 
-  if (plan.priceInCents === 0) {
+  const priceInCents = getPriceInCents(planId, interval)
+  if (priceInCents === 0) {
     throw new Error('Cannot checkout for free plan')
   }
 
@@ -54,12 +55,14 @@ export async function createCheckoutSession(planId: string) {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: plan.name,
-            description: plan.description
+            name: `${plan.name} (${interval === 'year' ? 'Annual' : 'Monthly'})`,
+            description: interval === 'year' 
+              ? `${plan.description} - Save 2 months with annual billing!`
+              : plan.description
           },
-          unit_amount: plan.priceInCents,
+          unit_amount: priceInCents,
           recurring: {
-            interval: 'month'
+            interval: interval
           }
         },
         quantity: 1
@@ -69,7 +72,8 @@ export async function createCheckoutSession(planId: string) {
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/billing?canceled=true`,
     metadata: {
       user_id: user.id,
-      plan_id: planId
+      plan_id: planId,
+      billing_interval: interval
     },
     ui_mode: 'embedded',
     return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/billing?session_id={CHECKOUT_SESSION_ID}`
