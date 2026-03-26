@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Bot, LayoutDashboard, Users, CreditCard, BarChart3, FileText, Settings, ListTodo, Webhook } from "lucide-react"
+import { LayoutDashboard, Users, CreditCard, BarChart3, FileText, Settings, ListTodo } from "lucide-react"
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -21,9 +22,15 @@ export function DashboardSidebar() {
   return (
     <aside className="w-64 border-r border-border bg-card hidden lg:flex flex-col">
       <div className="p-6 border-b border-border">
-        <Link href="/" className="flex items-center gap-2">
-          <Bot className="h-8 w-8 text-primary" />
-          <span className="text-xl font-display font-bold text-foreground">NexusAI</span>
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/images/logo.png"
+            alt="247 AI Employees"
+            width={40}
+            height={40}
+            className="h-10 w-auto"
+          />
+          <span className="text-sm font-display font-bold text-foreground leading-tight">247ai<br/>employees</span>
         </Link>
       </div>
       

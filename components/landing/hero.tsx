@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Sparkles, Users, Zap } from "lucide-react"
 
@@ -11,6 +12,17 @@ export function Hero() {
       </div>
 
       <div className="mx-auto max-w-4xl text-center">
+        <div className="mb-8 flex justify-center">
+          <Image
+            src="/images/logo.png"
+            alt="247 AI Employees"
+            width={180}
+            height={180}
+            className="h-44 w-auto"
+            priority
+          />
+        </div>
+
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary">
           <Sparkles className="h-4 w-4" />
           <span>The future of work is here</span>
