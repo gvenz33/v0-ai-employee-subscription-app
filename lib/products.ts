@@ -108,6 +108,7 @@ export function canAccessEmployee(userTier: string, requiredTier: string): boole
   return tierOrder.indexOf(userTier) >= tierOrder.indexOf(requiredTier)
 }
 
+// AI Employee catalog with roles and tier requirements
 export const AI_EMPLOYEES = [
   {
     name: "Sales Sage",
@@ -194,3 +195,6 @@ export const AI_EMPLOYEES = [
     icon: "Shield",
   },
 ]
+
+// Alias for backward compatibility
+export const AI_EMPLOYEE_CATALOG = AI_EMPLOYEES
