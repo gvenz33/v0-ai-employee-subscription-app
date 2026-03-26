@@ -23,7 +23,12 @@ const faqs = [
   {
     question: "What happens if I exceed my monthly task limit?",
     answer:
-      "When you reach your monthly task limit, your AI Employees will pause until your limit resets at the start of your next billing cycle. You can upgrade to a higher tier at any time to immediately unlock more tasks. We also send email notifications when you reach 80% and 100% of your limit so you can plan accordingly.",
+      "When you reach your monthly task limit, you have several options to keep working. First, you can purchase Token Packs directly from your dashboard - we offer three affordable options: Boost Pack (50 tasks for $9.99), Power Pack (150 tasks for $24.99 - save 17%), or Enterprise Pack (500 tasks for $69.99 - save 30%). These tokens are added instantly to your account and never expire. Alternatively, you can upgrade to a higher subscription tier for more monthly tasks and access to additional AI Employees. We also send notifications when you reach 80% and 100% of your limit so you can plan ahead.",
+  },
+  {
+    question: "Can I access premium AI Employees without upgrading my full plan?",
+    answer:
+      "Yes! We offer A La Carte agent access for users on Personal or Entrepreneur plans who want specific premium AI Employees without upgrading their entire subscription. For $9.99/month per agent, you can unlock any individual AI Employee from higher tiers. This is perfect if you only need one or two specialized agents - like the Legal Advisor or M&A Specialist - without paying for the full Business or Enterprise plan. A La Carte subscriptions are billed monthly and can be canceled anytime. Visit the AI Employees page in your dashboard to browse available agents and add them to your plan.",
   },
   {
     question: "How do webhooks and automation work?",
