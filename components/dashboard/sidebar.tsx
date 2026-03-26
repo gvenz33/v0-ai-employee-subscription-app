@@ -3,11 +3,12 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Bot, LayoutDashboard, Users, CreditCard, BarChart3, FileText, Settings } from "lucide-react"
+import { Bot, LayoutDashboard, Users, CreditCard, BarChart3, FileText, Settings, ListTodo, Webhook } from "lucide-react"
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/employees", label: "AI Employees", icon: Users },
+  { href: "/dashboard/tasks", label: "Task Queue", icon: ListTodo },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/invoices", label: "Invoices", icon: FileText },
