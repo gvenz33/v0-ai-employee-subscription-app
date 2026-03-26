@@ -198,3 +198,45 @@ export const AI_EMPLOYEES = [
 
 // Alias for backward compatibility
 export const AI_EMPLOYEE_CATALOG = AI_EMPLOYEES
+
+// Token packs for users who exceed their monthly limits
+export interface TokenPack {
+  id: string
+  name: string
+  description: string
+  tasks: number
+  priceInCents: number
+  savings?: string
+  popular?: boolean
+}
+
+export const TOKEN_PACKS: TokenPack[] = [
+  {
+    id: "token-pack-small",
+    name: "Boost Pack",
+    description: "Perfect for occasional overages",
+    tasks: 50,
+    priceInCents: 999, // $9.99
+  },
+  {
+    id: "token-pack-medium",
+    name: "Power Pack",
+    description: "Best value for growing teams",
+    tasks: 150,
+    priceInCents: 2499, // $24.99
+    savings: "Save 17%",
+    popular: true,
+  },
+  {
+    id: "token-pack-large",
+    name: "Enterprise Pack",
+    description: "Maximum tasks for heavy usage",
+    tasks: 500,
+    priceInCents: 6999, // $69.99
+    savings: "Save 30%",
+  },
+]
+
+export function getTokenPackById(id: string): TokenPack | undefined {
+  return TOKEN_PACKS.find((pack) => pack.id === id)
+}
