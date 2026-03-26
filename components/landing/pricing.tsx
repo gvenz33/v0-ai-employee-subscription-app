@@ -15,10 +15,10 @@ export function Pricing() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-display text-balance text-3xl font-bold text-foreground sm:text-4xl">
-            Simple, transparent pricing
+            Hire Your AI Workforce Today
           </h2>
           <p className="mt-4 text-pretty text-lg text-muted-foreground">
-            Choose the plan that fits your needs. Save 2 months with annual billing.
+            From personal productivity to enterprise operations. Save 2 months with annual billing.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export function Pricing() {
           </div>
         </div>
 
-        <div className="mx-auto mt-12 grid max-w-5xl gap-6 lg:grid-cols-3">
+        <div className="mx-auto mt-12 grid max-w-6xl gap-6 lg:grid-cols-4">
           {PLANS.map((plan) => {
             const price = billingInterval === "year" 
               ? plan.annualPriceInCents 
@@ -72,14 +72,14 @@ export function Pricing() {
               <div
                 key={plan.id}
                 className={cn(
-                  "relative flex flex-col rounded-2xl border bg-card p-8 transition-all",
+                  "relative flex flex-col rounded-2xl border bg-card p-6 transition-all",
                   plan.popular
                     ? "border-primary shadow-lg shadow-primary/10 scale-[1.02]"
                     : "border-border/50 hover:border-primary/30"
                 )}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-semibold text-primary-foreground">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
                     Most Popular
                   </div>
                 )}
@@ -88,55 +88,63 @@ export function Pricing() {
                   <h3 className="font-display text-lg font-semibold text-foreground">
                     {plan.name}
                   </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
                     {plan.description}
                   </p>
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-4">
                   <div className="flex items-baseline gap-1">
-                    <span className="font-display text-4xl font-bold text-foreground">
+                    <span className="font-display text-3xl font-bold text-foreground">
                       ${displayPrice}
                     </span>
-                    <span className="text-sm text-muted-foreground">/month</span>
+                    <span className="text-sm text-muted-foreground">/mo</span>
                   </div>
-                  {billingInterval === "year" && (
-                    <div className="mt-1 space-y-1">
-                      <p className="text-sm text-muted-foreground">
-                        <span className="line-through">${monthlyEquivalent}/mo</span>
-                        <span className="ml-2 text-primary font-medium">
-                          Save ${savings}/year
-                        </span>
-                      </p>
+                  {billingInterval === "year" && savings > 0 && (
+                    <div className="mt-1">
                       <p className="text-xs text-muted-foreground">
-                        Billed annually at ${price / 100}
+                        <span className="line-through">${monthlyEquivalent}/mo</span>
+                        <span className="ml-1 text-primary font-medium">
+                          Save ${savings}/yr
+                        </span>
                       </p>
                     </div>
                   )}
                 </div>
 
-                <ul className="mt-8 flex-1 space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3 text-sm">
+                <ul className="mt-6 flex-1 space-y-2">
+                  {plan.features.slice(0, 6).map((feature) => (
+                    <li key={feature} className="flex items-start gap-2 text-sm">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                       <span className="text-muted-foreground">{feature}</span>
                     </li>
                   ))}
+                  {plan.features.length > 6 && (
+                    <li className="text-xs text-primary">
+                      +{plan.features.length - 6} more features
+                    </li>
+                  )}
                 </ul>
 
                 <Button
-                  className="mt-8 w-full"
+                  className="mt-6 w-full"
                   variant={plan.popular ? "default" : "outline"}
+                  size="sm"
                   asChild
                 >
                   <Link href={`/auth/sign-up?plan=${plan.id}&interval=${billingInterval}`}>
-                    Get Started
+                    {plan.id === "enterprise" ? "Contact Sales" : "Get Started"}
                   </Link>
                 </Button>
               </div>
             )
           })}
         </div>
+
+        {/* A la carte note */}
+        <p className="mt-8 text-center text-sm text-muted-foreground">
+          Need a specific bot? Add premium AI employees a la carte starting at $14.99/month
+        </p>
       </div>
     </section>
   )
