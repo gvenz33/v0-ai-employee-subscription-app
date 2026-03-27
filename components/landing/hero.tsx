@@ -14,7 +14,7 @@ export function Hero() {
       <div className="mx-auto max-w-4xl text-center">
         <div className="mb-8 flex justify-center">
           <Image
-            src="/images/logo.png"
+            src="/images/logo-transparent.png"
             alt="247 AI Employees"
             width={600}
             height={600}
