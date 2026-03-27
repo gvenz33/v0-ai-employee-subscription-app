@@ -117,7 +117,7 @@ export function FAQ() {
           <p className="text-muted-foreground">
             Still have questions?{" "}
             <a
-              href="mailto:support@247aiemployees.net"
+              href="mailto:hello@247aiemployees.net"
               className="text-primary hover:underline"
             >
               Contact our support team
