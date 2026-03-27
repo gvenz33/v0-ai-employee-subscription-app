@@ -12,7 +12,8 @@ import {
   CreditCard,
   Bot,
   Share2,
-  Shield
+  Shield,
+  BookOpen
 } from "lucide-react"
 
 interface AdminSidebarProps {
@@ -23,9 +24,8 @@ const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "User Management", icon: Users },
   { href: "/admin/support", label: "Support Chats", icon: MessageSquare },
-  { href: "/admin/agents", label: "AI Agents", icon: Bot },
+  { href: "/admin/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { href: "/admin/affiliates", label: "Affiliates", icon: Share2 },
-  { href: "/admin/billing", label: "Billing Override", icon: CreditCard },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
 
