@@ -13,14 +13,22 @@ export function Hero() {
 
       <div className="mx-auto max-w-4xl text-center">
         <div className="mb-8 flex justify-center">
-          <Image
-            src="/images/logo.png"
-            alt="247 AI Employees"
-            width={180}
-            height={180}
-            className="h-44 w-auto"
-            priority
-          />
+          <div 
+            className="relative"
+            style={{
+              maskImage: 'radial-gradient(ellipse 80% 70% at center, black 50%, transparent 100%)',
+              WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at center, black 50%, transparent 100%)',
+            }}
+          >
+            <Image
+              src="/images/logo.png"
+              alt="247 AI Employees"
+              width={200}
+              height={200}
+              className="h-48 w-auto"
+              priority
+            />
+          </div>
         </div>
 
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary">
