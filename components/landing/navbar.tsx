@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Bot, Menu, X } from "lucide-react"
+import { Menu, X } from "lucide-react"
 import { useState } from "react"
 
 export function Navbar() {
@@ -11,12 +12,16 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Bot className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="font-display text-xl font-bold text-foreground">
-            NexusAI
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/images/logo.png"
+            alt="247 AI Employees"
+            width={48}
+            height={48}
+            className="h-12 w-auto"
+          />
+          <span className="hidden font-display text-lg font-bold text-foreground sm:inline">
+            247aiemployees.net
           </span>
         </Link>
 
@@ -30,6 +35,9 @@ export function Navbar() {
           <a href="#pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Pricing
           </a>
+          <Link href="/contact" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            Contact Us
+          </Link>
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -56,6 +64,7 @@ export function Navbar() {
             <a href="#features" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Features</a>
             <a href="#agents" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>AI Employees</a>
             <a href="#pricing" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Pricing</a>
+            <Link href="/contact" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Contact Us</Link>
             <div className="flex flex-col gap-2 pt-2">
               <Button variant="ghost" asChild>
                 <Link href="/auth/login">Log In</Link>

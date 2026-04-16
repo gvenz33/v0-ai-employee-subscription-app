@@ -31,7 +31,7 @@ export default function BillingPage() {
   const canceled = searchParams.get('canceled')
   
   const [selectedPlan, setSelectedPlan] = useState<{ id: string; interval: 'month' | 'year' } | null>(null)
-  const [currentTier, setCurrentTier] = useState<string>('starter')
+  const [currentTier, setCurrentTier] = useState<string>('personal')
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month')
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -127,10 +127,10 @@ export default function BillingPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-2xl font-bold text-foreground">
-                {currentPlan?.name || 'Starter'}
+                {currentPlan?.name || 'Personal'}
               </h3>
               <p className="text-muted-foreground">
-                ${(currentPlan?.monthlyPriceInCents || 1900) / 100}/month
+                ${(currentPlan?.monthlyPriceInCents || 900) / 100}/month
               </p>
             </div>
             <Badge variant={currentTier === 'enterprise' ? 'default' : 'secondary'}>
@@ -185,7 +185,7 @@ export default function BillingPage() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {PLANS.map((plan) => {
             const isCurrentPlan = plan.id === currentTier
             const isUpgrade = PLANS.findIndex(p => p.id === plan.id) > 

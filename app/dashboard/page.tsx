@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Users, Zap, TrendingUp, Clock } from "lucide-react"
+import { Users, TrendingUp, Clock } from "lucide-react"
 import Link from "next/link"
 import { AI_EMPLOYEES } from "@/lib/products"
+import { TaskUsageCard } from "@/components/dashboard/task-usage-card"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -57,17 +57,11 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Tasks Used</CardTitle>
-            <Zap className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">{totalTasks}</div>
-            <Progress value={usagePercent} className="mt-2 h-2" />
-            <p className="text-xs text-muted-foreground mt-1">{taskLimit - totalTasks} remaining</p>
-          </CardContent>
-        </Card>
+        <TaskUsageCard 
+          tasksUsed={totalTasks} 
+          taskLimit={taskLimit} 
+          subscriptionTier={profile?.subscription_tier || "starter"} 
+        />
 
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">

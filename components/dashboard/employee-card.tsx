@@ -5,10 +5,57 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Lock, MessageSquare } from "lucide-react"
+import { Lock, MessageSquare, ShoppingCart, Heart, Wallet, UtensilsCrossed, Plane, GraduationCap, Activity, Baby, Share2, PenTool, Search, RefreshCw, Megaphone, Target, Presentation, Settings, Headphones, TrendingUp, Users, Calendar, Clipboard, FileText, Briefcase, Calculator, FileSignature, Receipt, ShieldCheck, Handshake, Palette, Globe, Workflow, Rocket, Lightbulb, Building, Mic, BookOpen, BarChart3 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { AIEmployee } from "@/lib/products"
+
+// Map icon names to components
+const iconMap: Record<string, React.ReactNode> = {
+  Heart: <Heart className="h-5 w-5" />,
+  Wallet: <Wallet className="h-5 w-5" />,
+  UtensilsCrossed: <UtensilsCrossed className="h-5 w-5" />,
+  Plane: <Plane className="h-5 w-5" />,
+  GraduationCap: <GraduationCap className="h-5 w-5" />,
+  Activity: <Activity className="h-5 w-5" />,
+  Baby: <Baby className="h-5 w-5" />,
+  Share2: <Share2 className="h-5 w-5" />,
+  PenTool: <PenTool className="h-5 w-5" />,
+  Search: <Search className="h-5 w-5" />,
+  RefreshCw: <RefreshCw className="h-5 w-5" />,
+  Megaphone: <Megaphone className="h-5 w-5" />,
+  Target: <Target className="h-5 w-5" />,
+  Presentation: <Presentation className="h-5 w-5" />,
+  Settings: <Settings className="h-5 w-5" />,
+  Headphones: <Headphones className="h-5 w-5" />,
+  TrendingUp: <TrendingUp className="h-5 w-5" />,
+  Users: <Users className="h-5 w-5" />,
+  Calendar: <Calendar className="h-5 w-5" />,
+  Clipboard: <Clipboard className="h-5 w-5" />,
+  FileText: <FileText className="h-5 w-5" />,
+  Briefcase: <Briefcase className="h-5 w-5" />,
+  Calculator: <Calculator className="h-5 w-5" />,
+  FileSignature: <FileSignature className="h-5 w-5" />,
+  Receipt: <Receipt className="h-5 w-5" />,
+  ShieldCheck: <ShieldCheck className="h-5 w-5" />,
+  Handshake: <Handshake className="h-5 w-5" />,
+  Palette: <Palette className="h-5 w-5" />,
+  Globe: <Globe className="h-5 w-5" />,
+  Workflow: <Workflow className="h-5 w-5" />,
+  Rocket: <Rocket className="h-5 w-5" />,
+  Lightbulb: <Lightbulb className="h-5 w-5" />,
+  Building: <Building className="h-5 w-5" />,
+  Mic: <Mic className="h-5 w-5" />,
+  BookOpen: <BookOpen className="h-5 w-5" />,
+  BarChart3: <BarChart3 className="h-5 w-5" />,
+}
+
+const tierLabels: Record<string, string> = {
+  personal: "Personal",
+  entrepreneur: "Entrepreneur",
+  business: "Business",
+  enterprise: "Enterprise",
+}
 
 interface UserEmployee {
   id: string
@@ -36,13 +83,11 @@ export function EmployeeCard({ employee, userEmployee, isLocked, userId }: Emplo
 
     try {
       if (userEmployee) {
-        // Update existing employee
         await supabase
           .from("ai_employees")
           .update({ is_active: !isActive })
           .eq("id", userEmployee.id)
       } else {
-        // Create new employee for user
         await supabase
           .from("ai_employees")
           .insert({
@@ -50,8 +95,7 @@ export function EmployeeCard({ employee, userEmployee, isLocked, userId }: Emplo
             name: employee.name,
             role: employee.role,
             description: employee.description,
-            avatar_url: employee.avatar,
-            tier_required: employee.tierRequired,
+            tier_required: employee.tier_required,
             is_active: true,
           })
       }
@@ -66,47 +110,43 @@ export function EmployeeCard({ employee, userEmployee, isLocked, userId }: Emplo
   }
 
   const handleChat = () => {
-    router.push(`/dashboard/employees/${employee.id}/chat`)
+    router.push(`/dashboard/employees/${employee.id}`)
   }
 
   return (
-    <Card className={`bg-card border-border relative ${isLocked ? "opacity-75" : ""}`}>
+    <Card className={`bg-card border-border relative transition-all hover:border-primary/30 ${isLocked ? "opacity-60" : ""}`}>
       {isLocked && (
-        <div className="absolute top-3 right-3">
-          <Badge variant="outline" className="gap-1">
+        <div className="absolute top-2 right-2 z-10">
+          <Badge variant="outline" className="gap-1 bg-background/80 backdrop-blur-sm text-xs">
             <Lock className="h-3 w-3" />
-            {employee.tierRequired.charAt(0).toUpperCase() + employee.tierRequired.slice(1)}
+            {tierLabels[employee.tier_required] || employee.tier_required}
+          </Badge>
+        </div>
+      )}
+
+      {employee.isALaCarte && isLocked && (
+        <div className="absolute top-2 left-2 z-10">
+          <Badge className="gap-1 bg-primary text-xs">
+            <ShoppingCart className="h-3 w-3" />
+            ${(employee.aLaCartePriceInCents || 999) / 100}/mo
           </Badge>
         </div>
       )}
       
-      <CardHeader className="pb-3">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
-            {employee.avatar}
+      <CardHeader className="pb-2 pt-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            {iconMap[employee.icon] || <Users className="h-5 w-5" />}
           </div>
-          <div className="flex-1">
-            <CardTitle className="text-foreground">{employee.name}</CardTitle>
-            <CardDescription className="text-muted-foreground">{employee.role}</CardDescription>
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-foreground text-sm truncate">{employee.name}</CardTitle>
+            <CardDescription className="text-muted-foreground text-xs">{employee.role}</CardDescription>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">{employee.description}</p>
-        
-        <div className="flex flex-wrap gap-1">
-          {employee.capabilities.slice(0, 3).map((cap) => (
-            <Badge key={cap} variant="secondary" className="text-xs">
-              {cap}
-            </Badge>
-          ))}
-          {employee.capabilities.length > 3 && (
-            <Badge variant="secondary" className="text-xs">
-              +{employee.capabilities.length - 3}
-            </Badge>
-          )}
-        </div>
+      <CardContent className="space-y-3 pt-0">
+        <p className="text-xs text-muted-foreground line-clamp-2">{employee.description}</p>
 
         {userEmployee && (
           <p className="text-xs text-muted-foreground">
@@ -120,8 +160,9 @@ export function EmployeeCard({ employee, userEmployee, isLocked, userId }: Emplo
               checked={isActive}
               onCheckedChange={handleToggle}
               disabled={isLocked || isLoading}
+              className="scale-75"
             />
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {isActive ? "Active" : "Inactive"}
             </span>
           </div>
@@ -131,8 +172,9 @@ export function EmployeeCard({ employee, userEmployee, isLocked, userId }: Emplo
             variant={isActive ? "default" : "outline"}
             disabled={isLocked || !isActive}
             onClick={handleChat}
+            className="h-7 text-xs"
           >
-            <MessageSquare className="h-4 w-4 mr-1" />
+            <MessageSquare className="h-3 w-3 mr-1" />
             Chat
           </Button>
         </div>

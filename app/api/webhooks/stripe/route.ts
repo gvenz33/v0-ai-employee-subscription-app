@@ -37,11 +37,42 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Checkout.Session
       const userId = session.metadata?.user_id
       const planId = session.metadata?.plan_id
+      const isTokenPack = session.metadata?.type === 'token_pack'
+      const tasksToAdd = parseInt(session.metadata?.tasks_to_add || '0', 10)
 
-      if (userId && planId) {
-        // Get task limits based on plan
+      if (userId && isTokenPack && tasksToAdd > 0) {
+        // Handle token pack purchase - add tasks to user's limit
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('tasks_limit')
+          .eq('id', userId)
+          .single()
+
+        if (profile) {
+          await supabaseAdmin
+            .from('profiles')
+            .update({
+              tasks_limit: profile.tasks_limit + tasksToAdd,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', userId)
+
+          // Store purchase record as invoice
+          await supabaseAdmin
+            .from('invoices')
+            .insert({
+              user_id: userId,
+              stripe_invoice_id: session.id,
+              amount_cents: session.amount_total || 0,
+              currency: session.currency || 'usd',
+              status: 'paid',
+              description: `Token Pack: +${tasksToAdd} tasks`
+            })
+        }
+      } else if (userId && planId) {
+        // Handle subscription checkout
         const taskLimits: Record<string, number> = {
-          free: 50,
+          starter: 50,
           pro: 500,
           enterprise: 10000
         }

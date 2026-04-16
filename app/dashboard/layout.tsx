@@ -23,7 +23,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+      <DashboardSidebar isAdmin={profile?.is_superadmin || profile?.is_admin} />
       <div className="flex-1 flex flex-col">
         <DashboardHeader user={user} profile={profile} />
         <main className="flex-1 p-6 overflow-auto">

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter, Space_Grotesk } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
+import { SupportChatWidget } from "@/components/support-chat-widget"
 import "./globals.css"
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
@@ -11,9 +12,9 @@ const _spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: "NexusAI - Hire AI Employees for Your Business",
+  title: "247 AI Employees - Hire AI Employees That Work 24/7",
   description:
-    "Deploy intelligent AI agents that automate sales, marketing, support, and more. Scale your team without the overhead.",
+    "Deploy intelligent AI agents that automate sales, marketing, support, and more. Scale your team without the overhead. Available 24/7.",
 }
 
 export const viewport: Viewport = {
@@ -37,6 +38,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <SupportChatWidget />
           <Toaster />
         </ThemeProvider>
       </body>

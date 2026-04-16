@@ -6,18 +6,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { Bot, ArrowLeft } from "lucide-react"
+import Image from "next/image"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
+import { ArrowLeft, Eye, EyeOff } from "lucide-react"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [repeatPassword, setRepeatPassword] = useState("")
   const [fullName, setFullName] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [referralCode, setReferralCode] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    // Check for referral code in URL
+    const ref = searchParams.get("ref")
+    if (ref) {
+      setReferralCode(ref)
+      // Store in localStorage for persistence
+      localStorage.setItem("referral_code", ref)
+    } else {
+      // Check localStorage
+      const stored = localStorage.getItem("referral_code")
+      if (stored) setReferralCode(stored)
+    }
+  }, [searchParams])
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,10 +60,13 @@ export default function SignUpPage() {
             `${window.location.origin}/dashboard`,
           data: {
             full_name: fullName,
+            referral_code: referralCode,
           },
         },
       })
       if (error) throw error
+      // Clear referral code after successful signup
+      localStorage.removeItem("referral_code")
       router.push("/auth/sign-up-success")
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred")
@@ -62,9 +84,14 @@ export default function SignUpPage() {
             Back to home
           </Link>
           
-          <div className="flex items-center gap-2 justify-center">
-            <Bot className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-display font-bold text-foreground">NexusAI</span>
+          <div className="flex justify-center">
+            <Image
+              src="/images/logo.png"
+              alt="247 AI Employees"
+              width={80}
+              height={80}
+              className="h-20 w-auto"
+            />
           </div>
           
           <Card className="bg-card border-border">
@@ -103,25 +130,45 @@ export default function SignUpPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="password" className="text-foreground">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="bg-background border-border text-foreground"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="bg-background border-border text-foreground pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="repeat-password" className="text-foreground">Confirm Password</Label>
-                    <Input
-                      id="repeat-password"
-                      type="password"
-                      required
-                      value={repeatPassword}
-                      onChange={(e) => setRepeatPassword(e.target.value)}
-                      className="bg-background border-border text-foreground"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="repeat-password"
+                        type={showRepeatPassword ? "text" : "password"}
+                        required
+                        value={repeatPassword}
+                        onChange={(e) => setRepeatPassword(e.target.value)}
+                        className="bg-background border-border text-foreground pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRepeatPassword(!showRepeatPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        tabIndex={-1}
+                      >
+                        {showRepeatPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   {error && <p className="text-sm text-destructive">{error}</p>}
                   <Button type="submit" className="w-full mt-2" disabled={isLoading}>
