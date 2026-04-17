@@ -1,19 +1,46 @@
 import { createClient } from "@/lib/supabase/server"
 import { AI_EMPLOYEES } from "@/lib/products"
 import { NextRequest } from "next/server"
+import { validateApiKey, logApiRequest } from "@/lib/api-auth"
 
-// User-facing tasks API
+// User-facing tasks API with API key support
+
+async function getAuthenticatedUser(request: NextRequest): Promise<{ userId: string | null; apiKeyId: string | null; error?: string }> {
+  const authHeader = request.headers.get("Authorization")
+  
+  if (authHeader?.startsWith("Bearer 247ai_")) {
+    const auth = await validateApiKey(request)
+    if (!auth.valid || !auth.data) {
+      return { userId: null, apiKeyId: null, error: auth.error }
+    }
+    if (!auth.data.permissions.tasks) {
+      return { userId: null, apiKeyId: null, error: "API key does not have tasks permission" }
+    }
+    return { userId: auth.data.user_id, apiKeyId: auth.data.id }
+  }
+  
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  if (error || !user) {
+    return { userId: null, apiKeyId: null, error: "Unauthorized" }
+  }
+  
+  return { userId: user.id, apiKeyId: null }
+}
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
+  
   try {
-    const supabase = await createClient()
+    const { userId, apiKeyId, error: authError } = await getAuthenticatedUser(request)
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    if (!userId) {
+      if (apiKeyId) await logApiRequest(apiKeyId, null, "/api/tasks", "GET", 401, Date.now() - startTime, request)
+      return Response.json({ error: authError || "Unauthorized" }, { status: 401 })
     }
 
+    const supabase = await createClient()
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get("status")
     const employee_id = searchParams.get("employee_id")
@@ -23,7 +50,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from("tasks")
       .select("*", { count: "exact" })
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -37,6 +64,7 @@ export async function GET(request: NextRequest) {
     const { data: tasks, error, count } = await query
 
     if (error) {
+      if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "GET", 500, Date.now() - startTime, request)
       return Response.json({ error: "Failed to fetch tasks" }, { status: 500 })
     }
 
@@ -50,6 +78,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "GET", 200, Date.now() - startTime, request)
     return Response.json({ tasks: enrichedTasks, total: count })
 
   } catch (error) {
@@ -59,19 +88,22 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  
   try {
-    const supabase = await createClient()
+    const { userId, apiKeyId, error: authError } = await getAuthenticatedUser(request)
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    if (!userId) {
+      if (apiKeyId) await logApiRequest(apiKeyId, null, "/api/tasks", "POST", 401, Date.now() - startTime, request)
+      return Response.json({ error: authError || "Unauthorized" }, { status: 401 })
     }
 
+    const supabase = await createClient()
     const body = await request.json()
     const { employee_id, prompt, title, priority = "normal" } = body
 
     if (!employee_id || !prompt) {
+      if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "POST", 400, Date.now() - startTime, request)
       return Response.json(
         { error: "Missing required fields: employee_id, prompt" },
         { status: 400 }
@@ -80,6 +112,7 @@ export async function POST(request: NextRequest) {
 
     const employee = AI_EMPLOYEES.find(e => e.id === employee_id)
     if (!employee) {
+      if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "POST", 400, Date.now() - startTime, request)
       return Response.json({ error: "Invalid employee_id" }, { status: 400 })
     }
 
@@ -87,25 +120,28 @@ export async function POST(request: NextRequest) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("subscription_tier, tasks_used, tasks_limit")
-      .eq("id", user.id)
+      .eq("id", userId)
       .single()
 
     if (!profile) {
+      if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "POST", 404, Date.now() - startTime, request)
       return Response.json({ error: "Profile not found" }, { status: 404 })
     }
 
-    const tierOrder = { starter: 1, pro: 2, enterprise: 3 }
+    const tierOrder = { personal: 1, entrepreneur: 2, business: 3, enterprise: 4 }
     const userTierLevel = tierOrder[profile.subscription_tier as keyof typeof tierOrder] || 0
-    const requiredTierLevel = tierOrder[employee.tierRequired as keyof typeof tierOrder] || 0
+    const requiredTierLevel = tierOrder[employee.tier_required as keyof typeof tierOrder] || 0
 
     if (userTierLevel < requiredTierLevel) {
+      if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "POST", 403, Date.now() - startTime, request)
       return Response.json(
-        { error: `Upgrade to ${employee.tierRequired} to use this AI employee` },
+        { error: `Upgrade to ${employee.tier_required} to use this AI employee` },
         { status: 403 }
       )
     }
 
     if (profile.tasks_used >= profile.tasks_limit) {
+      if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "POST", 429, Date.now() - startTime, request)
       return Response.json(
         { error: "Task limit reached. Upgrade your plan for more tasks." },
         { status: 429 }
@@ -116,18 +152,20 @@ export async function POST(request: NextRequest) {
     const { data: task, error: taskError } = await supabase
       .from("tasks")
       .insert({
-        user_id: user.id,
+        user_id: userId,
         ai_employee_id: employee_id,
         title: title || `${employee.name} Task`,
         prompt,
         priority,
-        trigger_type: "manual",
-        status: "pending"
+        trigger_type: apiKeyId ? "api" : "manual",
+        status: "pending",
+        metadata: apiKeyId ? { api_key_id: apiKeyId } : {}
       })
       .select()
       .single()
 
     if (taskError) {
+      if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "POST", 500, Date.now() - startTime, request)
       return Response.json({ error: "Failed to create task" }, { status: 500 })
     }
 
@@ -138,7 +176,8 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({ task_id: task.id })
     }).catch(() => {})
 
-    return Response.json({ task, message: "Task queued for processing" })
+    if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "POST", 201, Date.now() - startTime, request)
+    return Response.json({ task, message: "Task queued for processing" }, { status: 201 })
 
   } catch (error) {
     console.error("Create task error:", error)
