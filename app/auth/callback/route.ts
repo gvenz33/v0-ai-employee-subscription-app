@@ -1,11 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { getSupabaseAdmin } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
-
-const supabaseAdmin = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
@@ -18,7 +13,7 @@ export async function GET(request: Request) {
 
     if (!error && user) {
       // Check if profile exists
-      const { data: existingProfile } = await supabaseAdmin
+      const { data: existingProfile } = await getSupabaseAdmin()
         .from("profiles")
         .select("id")
         .eq("id", user.id)
@@ -29,7 +24,7 @@ export async function GET(request: Request) {
         const fullName = user.user_metadata?.full_name || ""
         const referralCode = user.user_metadata?.referral_code
 
-        await supabaseAdmin.from("profiles").insert({
+        await getSupabaseAdmin().from("profiles").insert({
           id: user.id,
           email: user.email,
           full_name: fullName,
@@ -40,7 +35,7 @@ export async function GET(request: Request) {
         // Generate unique affiliate code for new user
         const newReferralCode = `REF${user.id.slice(0, 8).toUpperCase()}${Math.random().toString(36).slice(2, 6).toUpperCase()}`
         
-        await supabaseAdmin.from("affiliates").insert({
+        await getSupabaseAdmin().from("affiliates").insert({
           user_id: user.id,
           referral_code: newReferralCode,
           commission_rate: 10 // Personal tier rate
@@ -48,7 +43,7 @@ export async function GET(request: Request) {
 
         // Handle referral tracking if user signed up with a referral code
         if (referralCode) {
-          const { data: referrer } = await supabaseAdmin
+          const { data: referrer } = await getSupabaseAdmin()
             .from("affiliates")
             .select("id, user_id, commission_rate, total_referrals")
             .eq("referral_code", referralCode)
@@ -56,7 +51,7 @@ export async function GET(request: Request) {
 
           if (referrer) {
             // Create referral record
-            await supabaseAdmin.from("referrals").insert({
+            await getSupabaseAdmin().from("referrals").insert({
               affiliate_id: referrer.id,
               referred_user_id: user.id,
               subscription_tier: "personal",
@@ -73,7 +68,7 @@ export async function GET(request: Request) {
               newRate = Math.min(referrer.commission_rate + 2, 20)
             }
 
-            await supabaseAdmin
+            await getSupabaseAdmin()
               .from("affiliates")
               .update({ 
                 total_referrals: newTotal,
@@ -82,7 +77,7 @@ export async function GET(request: Request) {
               .eq("id", referrer.id)
 
             // Update new user's profile with referrer
-            await supabaseAdmin
+            await getSupabaseAdmin()
               .from("profiles")
               .update({ referred_by: referrer.id })
               .eq("id", user.id)

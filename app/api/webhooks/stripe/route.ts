@@ -1,13 +1,7 @@
-import { stripe } from '@/lib/stripe'
-import { createClient } from '@supabase/supabase-js'
+import { getStripe } from '@/lib/stripe'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
-
-// Create a Supabase admin client for webhook handling (bypasses RLS)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -21,7 +15,7 @@ export async function POST(req: Request) {
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
@@ -42,14 +36,14 @@ export async function POST(req: Request) {
 
       if (userId && isTokenPack && tasksToAdd > 0) {
         // Handle token pack purchase - add tasks to user's limit
-        const { data: profile } = await supabaseAdmin
+        const { data: profile } = await getSupabaseAdmin()
           .from('profiles')
           .select('tasks_limit')
           .eq('id', userId)
           .single()
 
         if (profile) {
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from('profiles')
             .update({
               tasks_limit: profile.tasks_limit + tasksToAdd,
@@ -58,7 +52,7 @@ export async function POST(req: Request) {
             .eq('id', userId)
 
           // Store purchase record as invoice
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from('invoices')
             .insert({
               user_id: userId,
@@ -78,7 +72,7 @@ export async function POST(req: Request) {
         }
 
         // Update user's subscription
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('profiles')
           .update({
             subscription_tier: planId,
@@ -96,7 +90,7 @@ export async function POST(req: Request) {
       const customerId = subscription.customer as string
 
       // Find user by customer ID
-      const { data: profile } = await supabaseAdmin
+      const { data: profile } = await getSupabaseAdmin()
         .from('profiles')
         .select('id')
         .eq('stripe_customer_id', customerId)
@@ -116,7 +110,7 @@ export async function POST(req: Request) {
           enterprise: 10000
         }
 
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('profiles')
           .update({
             subscription_tier: subscription.status === 'active' ? tier : 'free',
@@ -133,14 +127,14 @@ export async function POST(req: Request) {
       const customerId = subscription.customer as string
 
       // Find user by customer ID and downgrade to free
-      const { data: profile } = await supabaseAdmin
+      const { data: profile } = await getSupabaseAdmin()
         .from('profiles')
         .select('id')
         .eq('stripe_customer_id', customerId)
         .single()
 
       if (profile) {
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('profiles')
           .update({
             subscription_tier: 'free',
@@ -159,7 +153,7 @@ export async function POST(req: Request) {
       const customerId = invoice.customer as string
 
       // Find user by customer ID
-      const { data: profile } = await supabaseAdmin
+      const { data: profile } = await getSupabaseAdmin()
         .from('profiles')
         .select('id')
         .eq('stripe_customer_id', customerId)
@@ -167,7 +161,7 @@ export async function POST(req: Request) {
 
       if (profile) {
         // Store invoice record
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('invoices')
           .insert({
             user_id: profile.id,
@@ -182,7 +176,7 @@ export async function POST(req: Request) {
           })
 
         // Reset monthly task usage on successful payment
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('profiles')
           .update({ tasks_used: 0 })
           .eq('id', profile.id)
@@ -195,7 +189,7 @@ export async function POST(req: Request) {
       const customerId = invoice.customer as string
 
       // Find user by customer ID
-      const { data: profile } = await supabaseAdmin
+      const { data: profile } = await getSupabaseAdmin()
         .from('profiles')
         .select('id')
         .eq('stripe_customer_id', customerId)
@@ -203,7 +197,7 @@ export async function POST(req: Request) {
 
       if (profile) {
         // Store failed invoice record
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('invoices')
           .insert({
             user_id: profile.id,

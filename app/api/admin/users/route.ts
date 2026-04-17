@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createAdminClient } from "@supabase/supabase-js"
-
-const supabaseAdmin = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from "@/lib/supabase/admin"
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +25,7 @@ export async function POST(request: NextRequest) {
     const { email, password, full_name, subscription_tier } = await request.json()
 
     // Create user with admin client
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: newUser, error: createError } = await getSupabaseAdmin().auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -50,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create profile
-    await supabaseAdmin.from("profiles").insert({
+    await getSupabaseAdmin().from("profiles").insert({
       id: newUser.user.id,
       email: email,
       full_name,
@@ -68,7 +63,7 @@ export async function POST(request: NextRequest) {
       enterprise: 20
     }
 
-    await supabaseAdmin.from("affiliates").insert({
+    await getSupabaseAdmin().from("affiliates").insert({
       user_id: newUser.user.id,
       referral_code: referralCode,
       commission_rate: commissionRates[subscription_tier] || 10

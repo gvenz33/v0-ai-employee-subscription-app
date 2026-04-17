@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from "@/lib/supabase/admin"
 
 export async function POST(request: NextRequest) {
   try {
     const { sessionId } = await request.json()
 
     // Update conversation to needs_human
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from("support_conversations")
       .update({ 
         needs_human: true,

@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { streamText, convertToModelMessages } from "ai"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from "@/lib/supabase/admin"
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch FAQ knowledge base
-    const { data: faqs } = await supabaseAdmin
+    const { data: faqs } = await getSupabaseAdmin()
       .from("faq_knowledge_base")
       .select("question, answer, category")
       .order("helpful_count", { ascending: false })
@@ -116,14 +111,14 @@ Current conversation context: The user is asking about ${message.toLowerCase().i
 async function storeConversation(sessionId: string, userMessage: string, aiResponse: string) {
   try {
     // Get or create conversation
-    let { data: conversation } = await supabaseAdmin
+    let { data: conversation } = await getSupabaseAdmin()
       .from("support_conversations")
       .select("id")
       .eq("session_id", sessionId)
       .single()
 
     if (!conversation) {
-      const { data: newConv } = await supabaseAdmin
+      const { data: newConv } = await getSupabaseAdmin()
         .from("support_conversations")
         .insert({ session_id: sessionId })
         .select("id")
@@ -133,7 +128,7 @@ async function storeConversation(sessionId: string, userMessage: string, aiRespo
 
     if (conversation) {
       // Store messages
-      await supabaseAdmin.from("support_messages").insert([
+      await getSupabaseAdmin().from("support_messages").insert([
         { conversation_id: conversation.id, role: "user", content: userMessage },
         { conversation_id: conversation.id, role: "assistant", content: aiResponse }
       ])
@@ -146,7 +141,7 @@ async function storeConversation(sessionId: string, userMessage: string, aiRespo
 async function notifyAdmin(sessionId: string, message: string) {
   try {
     // Update conversation to needs_human
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from("support_conversations")
       .update({ needs_human: true })
       .eq("session_id", sessionId)

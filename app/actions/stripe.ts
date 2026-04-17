@@ -1,6 +1,6 @@
 'use server'
 
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { PLANS, getPriceInCents, TOKEN_PACKS, getTokenPackById } from '@/lib/products'
 
@@ -32,7 +32,7 @@ export async function createCheckoutSession(planId: string, interval: 'month' | 
   let customerId = profile?.stripe_customer_id
 
   if (!customerId) {
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email: user.email,
       metadata: {
         supabase_user_id: user.id
@@ -46,7 +46,7 @@ export async function createCheckoutSession(planId: string, interval: 'month' | 
       .eq('id', user.id)
   }
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
     payment_method_types: ['card'],
@@ -100,7 +100,7 @@ export async function createBillingPortalSession() {
     throw new Error('No billing information found')
   }
 
-  const session = await stripe.billingPortal.sessions.create({
+  const session = await getStripe().billingPortal.sessions.create({
     customer: profile.stripe_customer_id,
     return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/billing`
   })
@@ -126,7 +126,7 @@ export async function cancelSubscription() {
     throw new Error('No active subscription found')
   }
 
-  await stripe.subscriptions.update(profile.stripe_subscription_id, {
+  await getStripe().subscriptions.update(profile.stripe_subscription_id, {
     cancel_at_period_end: true
   })
 
@@ -156,7 +156,7 @@ export async function createTokenPackCheckout(packId: string) {
   let customerId = profile?.stripe_customer_id
 
   if (!customerId) {
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email: user.email,
       metadata: {
         supabase_user_id: user.id
@@ -170,7 +170,7 @@ export async function createTokenPackCheckout(packId: string) {
       .eq('id', user.id)
   }
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     customer: customerId,
     mode: 'payment',
     payment_method_types: ['card'],
@@ -220,7 +220,7 @@ export async function getInvoices() {
     return []
   }
 
-  const invoices = await stripe.invoices.list({
+  const invoices = await getStripe().invoices.list({
     customer: profile.stripe_customer_id,
     limit: 100
   })
