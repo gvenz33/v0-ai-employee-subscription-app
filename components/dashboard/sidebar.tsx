@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, CreditCard, BarChart3, FileText, Settings, ListTodo, Share2, Shield } from "lucide-react"
+import { LayoutDashboard, Users, CreditCard, BarChart3, FileText, Settings, ListTodo, Share2, Shield, Code } from "lucide-react"
 
 interface DashboardSidebarProps {
   isAdmin?: boolean
@@ -18,6 +18,7 @@ const navItems = [
   { href: "/dashboard/affiliate", label: "Affiliate", icon: Share2 },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/invoices", label: "Invoices", icon: FileText },
+  { href: "/dashboard/api-docs", label: "API Docs", icon: Code },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
