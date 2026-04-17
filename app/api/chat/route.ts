@@ -1,8 +1,10 @@
 import { streamText, convertToModelMessages } from 'ai'
 import { createClient } from '@/lib/supabase/server'
-import { AI_EMPLOYEES, canAccessEmployee, getEmployeeById } from '@/lib/products'
+import { canAccessEmployee, getEmployeeById } from '@/lib/products'
+import { validateApiKey, logApiRequest } from '@/lib/api-auth'
 
 export async function POST(req: Request) {
+  const startTime = Date.now()
   const { messages, employeeId } = await req.json()
   
   // Get the AI employee configuration
@@ -12,22 +14,51 @@ export async function POST(req: Request) {
     return new Response('AI Employee not found', { status: 404 })
   }
 
-  // Check user authentication and subscription
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Try API key auth first, then fall back to session auth
+  let userId: string | null = null
+  let apiKeyId: string | null = null
   
-  if (!user) {
-    return new Response('Unauthorized', { status: 401 })
+  const authHeader = req.headers.get('Authorization')
+  
+  if (authHeader?.startsWith('Bearer 247ai_')) {
+    // API key authentication
+    const auth = await validateApiKey(req)
+    
+    if (!auth.valid || !auth.data) {
+      await logApiRequest(null, null, '/api/chat', 'POST', 401, Date.now() - startTime, req)
+      return new Response(auth.error || 'Invalid API key', { status: 401 })
+    }
+    
+    if (!auth.data.permissions.chat) {
+      await logApiRequest(auth.data.id, auth.data.user_id, '/api/chat', 'POST', 403, Date.now() - startTime, req)
+      return new Response('API key does not have chat permission', { status: 403 })
+    }
+    
+    userId = auth.data.user_id
+    apiKeyId = auth.data.id
+  } else {
+    // Session-based authentication
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+    
+    userId = user.id
   }
+
+  const supabase = await createClient()
 
   // Get user profile to check subscription tier
   const { data: profile } = await supabase
     .from('profiles')
     .select('subscription_tier, tasks_used, tasks_limit')
-    .eq('id', user.id)
+    .eq('id', userId)
     .single()
 
   if (!profile) {
+    if (apiKeyId) await logApiRequest(apiKeyId, userId, '/api/chat', 'POST', 404, Date.now() - startTime, req)
     return new Response('Profile not found', { status: 404 })
   }
 
@@ -35,11 +66,13 @@ export async function POST(req: Request) {
   
   // Check if user has access to this employee based on tier
   if (!canAccessEmployee(userTier, employee.tier_required)) {
+    if (apiKeyId) await logApiRequest(apiKeyId, userId, '/api/chat', 'POST', 403, Date.now() - startTime, req)
     return new Response(`This AI employee requires ${employee.tier_required} tier`, { status: 403 })
   }
 
   // Check task limits
   if (profile.tasks_used >= profile.tasks_limit) {
+    if (apiKeyId) await logApiRequest(apiKeyId, userId, '/api/chat', 'POST', 429, Date.now() - startTime, req)
     return new Response('Task limit reached. Please upgrade your plan or purchase more tasks.', { status: 429 })
   }
 
@@ -53,7 +86,7 @@ export async function POST(req: Request) {
     onFinish: async () => {
       // Log the task and increment usage
       await supabase.from('task_logs').insert({
-        user_id: user.id,
+        user_id: userId,
         ai_employee_id: employeeId,
         task_type: 'chat',
         description: `Chat with ${employee.name}`,
@@ -64,7 +97,12 @@ export async function POST(req: Request) {
       await supabase
         .from('profiles')
         .update({ tasks_used: profile.tasks_used + 1 })
-        .eq('id', user.id)
+        .eq('id', userId)
+        
+      // Log API request if using API key
+      if (apiKeyId) {
+        await logApiRequest(apiKeyId, userId, '/api/chat', 'POST', 200, Date.now() - startTime, req)
+      }
     }
   })
 
