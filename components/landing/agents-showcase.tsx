@@ -2,12 +2,12 @@ import { AI_EMPLOYEE_CATALOG } from "@/lib/products"
 import { Badge } from "@/components/ui/badge"
 import {
   TrendingUp, PenTool, BarChart3, Headphones, Search, Share2,
-  Mail, Code, DollarSign, Users, Clipboard, Shield
+  Mail, Code, DollarSign, Users, Clipboard, Shield, Microscope, Code2,
 } from "lucide-react"
 
 const iconMap: Record<string, React.ElementType> = {
   TrendingUp, PenTool, BarChart3, Headphones, Search, Share2,
-  Mail, Code, DollarSign, Users, Clipboard, Shield,
+  Mail, Code, DollarSign, Users, Clipboard, Shield, Microscope, Code2,
 }
 
 const tierColors: Record<string, string> = {

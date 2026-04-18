@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Lock, MessageSquare, ShoppingCart, Heart, Wallet, UtensilsCrossed, Plane, GraduationCap, Activity, Baby, Share2, PenTool, Search, RefreshCw, Megaphone, Target, Presentation, Settings, Headphones, TrendingUp, Users, Calendar, Clipboard, FileText, Briefcase, Calculator, FileSignature, Receipt, ShieldCheck, Handshake, Palette, Globe, Workflow, Rocket, Lightbulb, Building, Mic, BookOpen, BarChart3 } from "lucide-react"
+import { Lock, MessageSquare, ShoppingCart, Heart, Wallet, UtensilsCrossed, Plane, GraduationCap, Activity, Baby, Share2, PenTool, Search, RefreshCw, Megaphone, Target, Presentation, Settings, Headphones, TrendingUp, Users, Calendar, Clipboard, FileText, Briefcase, Calculator, FileSignature, Receipt, ShieldCheck, Handshake, Palette, Globe, Workflow, Rocket, Lightbulb, Building, Mic, BookOpen, BarChart3, Microscope, Code2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { AIEmployee } from "@/lib/products"
@@ -48,6 +48,8 @@ const iconMap: Record<string, React.ReactNode> = {
   Mic: <Mic className="h-5 w-5" />,
   BookOpen: <BookOpen className="h-5 w-5" />,
   BarChart3: <BarChart3 className="h-5 w-5" />,
+  Microscope: <Microscope className="h-5 w-5" />,
+  Code2: <Code2 className="h-5 w-5" />,
 }
 
 const tierLabels: Record<string, string> = {
