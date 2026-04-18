@@ -20,7 +20,12 @@ export async function signInWithPasswordAction(formData: FormData): Promise<Sign
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
   if (!supabaseUrl || !supabaseAnonKey) {
-    return { error: 'Server configuration error: Supabase URL or anon key is missing.' }
+    const missing: string[] = []
+    if (!supabaseUrl) missing.push('NEXT_PUBLIC_SUPABASE_URL')
+    if (!supabaseAnonKey) missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    return {
+      error: `Missing environment variable(s): ${missing.join(', ')}. Add them in Vercel → Project → Settings → Environment Variables (Production), then redeploy.`,
+    }
   }
 
   const cookieStore = await cookies()
