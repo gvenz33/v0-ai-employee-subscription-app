@@ -106,7 +106,7 @@ export default function EmployeeChatPage() {
                 Start a conversation with {employee.name}
               </h3>
               <p className="text-muted-foreground text-sm max-w-md">
-                {employee.description}. Ask me anything related to {employee.capabilities.slice(0, 2).join(' or ')}.
+                {employee.description} Ask me anything that fits my role as your {employee.role}.
               </p>
             </div>
           ) : (
