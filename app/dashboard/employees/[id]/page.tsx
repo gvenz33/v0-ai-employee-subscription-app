@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ArrowLeft, Send, Bot, User } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
+import { DictationButton } from '@/components/dictation-button'
 
 function getUIMessageText(msg: { parts?: Array<{ type: string; text?: string }> }): string {
   if (!msg.parts || !Array.isArray(msg.parts)) return ''
@@ -150,13 +151,19 @@ export default function EmployeeChatPage() {
         </CardContent>
 
         <div className="border-t border-border p-4">
-          <form onSubmit={handleSubmit} className="flex gap-2">
+          <form onSubmit={handleSubmit} className="flex gap-2 items-center">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={`Ask ${employee.name} something...`}
               disabled={isLoading}
               className="flex-1 bg-background border-border"
+            />
+            <DictationButton
+              disabled={isLoading}
+              appendText={(snippet) =>
+                setInput((prev) => (prev ? `${prev.trimEnd()} ` : '') + snippet)
+              }
             />
             <Button type="submit" disabled={isLoading || !input.trim()}>
               <Send className="h-4 w-4" />

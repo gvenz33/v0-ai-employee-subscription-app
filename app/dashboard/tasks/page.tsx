@@ -13,6 +13,7 @@ import { AI_EMPLOYEES } from "@/lib/products"
 import { createClient } from "@/lib/supabase/client"
 import { Play, Clock, CheckCircle2, XCircle, RefreshCw, Plus, Copy, Eye, EyeOff, Loader2 } from "lucide-react"
 import useSWR, { mutate } from "swr"
+import { DictationButton } from "@/components/dictation-button"
 
 interface Task {
   id: string
@@ -199,14 +200,31 @@ export default function TasksPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Task Title</label>
-                <Input
-                  placeholder="e.g., Write blog post about AI trends"
-                  value={taskTitle}
-                  onChange={(e) => setTaskTitle(e.target.value)}
-                />
+                <div className="flex gap-2 items-center">
+                  <Input
+                    className="flex-1"
+                    placeholder="e.g., Write blog post about AI trends"
+                    value={taskTitle}
+                    onChange={(e) => setTaskTitle(e.target.value)}
+                  />
+                  <DictationButton
+                    appendText={(snippet) =>
+                      setTaskTitle((prev) => (prev ? `${prev.trimEnd()} ` : "") + snippet)
+                    }
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Task Instructions</label>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="text-sm font-medium">Task Instructions</label>
+                  <DictationButton
+                    size="sm"
+                    className="h-9"
+                    appendText={(snippet) =>
+                      setTaskPrompt((prev) => (prev ? `${prev.trimEnd()} ` : "") + snippet)
+                    }
+                  />
+                </div>
                 <Textarea
                   placeholder="Provide detailed instructions for the AI employee..."
                   rows={6}

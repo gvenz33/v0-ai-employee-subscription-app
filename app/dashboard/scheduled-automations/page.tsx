@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Loader2, Mail, Trash2 } from "lucide-react"
+import { DictationButton } from "@/components/dictation-button"
 
 const TIMEZONES = [
   { value: "America/Los_Angeles", label: "Pacific (US)" },
@@ -153,12 +154,14 @@ export default function ScheduledAutomationsPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Email automations</h1>
         <p className="text-muted-foreground">
-          Describe what you want, pick a schedule, and we email you the AI output each time it runs (uses your task
-          credits). Emails send from{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">hello@247aiemployees.net</code> unless you set{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">AUTOMATION_EMAIL_FROM</code> on Vercel. You need{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">RESEND_API_KEY</code> and that domain verified in
-          Resend.
+          Describe what you want (type or use the mic to dictate), pick a schedule, and we email the AI output each run
+          (uses task credits). Sending uses{" "}
+          <code className="text-xs bg-muted px-1 py-0.5 rounded">SMTP_USER</code> /{" "}
+          <code className="text-xs bg-muted px-1 py-0.5 rounded">SMTP_PASSWORD</code> (optional{" "}
+          <code className="text-xs bg-muted px-1 py-0.5 rounded">SMTP_HOST</code> defaults to SiteGround outbound) or{" "}
+          <code className="text-xs bg-muted px-1 py-0.5 rounded">RESEND_API_KEY</code>. From line defaults to{" "}
+          <code className="text-xs bg-muted px-1 py-0.5 rounded">hello@247aiemployees.net</code> unless{" "}
+          <code className="text-xs bg-muted px-1 py-0.5 rounded">AUTOMATION_EMAIL_FROM</code> is set.
         </p>
       </div>
 
@@ -191,17 +194,33 @@ export default function ScheduledAutomationsPage() {
             </div>
             <div className="space-y-2">
               <Label>Short title (optional)</Label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Morning AI digest"
-                className="bg-background"
-              />
+              <div className="flex gap-2 items-center">
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Morning AI digest"
+                  className="bg-background flex-1"
+                />
+                <DictationButton
+                  appendText={(snippet) =>
+                    setTitle((prev) => (prev ? `${prev.trimEnd()} ` : "") + snippet)
+                  }
+                />
+              </div>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Instructions & output format</Label>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Label>Instructions & output format</Label>
+              <DictationButton
+                size="sm"
+                className="h-9"
+                appendText={(snippet) =>
+                  setPrompt((prev) => (prev ? `${prev.trimEnd()} ` : "") + snippet)
+                }
+              />
+            </div>
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
