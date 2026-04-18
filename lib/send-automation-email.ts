@@ -14,7 +14,7 @@ export async function sendAutomationDigestEmail(input: {
 
   const from =
     process.env.AUTOMATION_EMAIL_FROM?.trim() ||
-    "247 AI Employees <onboarding@resend.dev>"
+    "247 AI Employees <hello@247aiemployees.net>"
 
   const resend = new Resend(key)
   const { error } = await resend.emails.send({

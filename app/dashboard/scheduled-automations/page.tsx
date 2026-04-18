@@ -154,9 +154,11 @@ export default function ScheduledAutomationsPage() {
         <h1 className="text-2xl font-bold text-foreground">Email automations</h1>
         <p className="text-muted-foreground">
           Describe what you want, pick a schedule, and we email you the AI output each time it runs (uses your task
-          credits). Add{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">RESEND_API_KEY</code> and{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">AUTOMATION_EMAIL_FROM</code> on Vercel for delivery.
+          credits). Emails send from{" "}
+          <code className="text-xs bg-muted px-1 py-0.5 rounded">hello@247aiemployees.net</code> unless you set{" "}
+          <code className="text-xs bg-muted px-1 py-0.5 rounded">AUTOMATION_EMAIL_FROM</code> on Vercel. You need{" "}
+          <code className="text-xs bg-muted px-1 py-0.5 rounded">RESEND_API_KEY</code> and that domain verified in
+          Resend.
         </p>
       </div>
 
