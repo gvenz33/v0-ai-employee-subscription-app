@@ -89,7 +89,7 @@ export default function TasksPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ai_employee_id: selectedEmployee,
+          employee_id: selectedEmployee,
           title: taskTitle,
           prompt: taskPrompt,
           priority,

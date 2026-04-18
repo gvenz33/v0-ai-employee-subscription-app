@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js"
 import { generateText } from "ai"
 import { AI_EMPLOYEES } from "@/lib/products"
+import { runDueScheduledAutomations } from "@/lib/run-scheduled-automations"
 import { NextResponse } from "next/server"
 
 // This endpoint is called by a cron job to process pending tasks
@@ -33,14 +34,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to fetch tasks" }, { status: 500 })
   }
 
-  if (!tasks || tasks.length === 0) {
-    return NextResponse.json({ message: "No pending tasks", processed: 0 })
-  }
-
   let processed = 0
   let failed = 0
 
-  for (const task of tasks) {
+  for (const task of tasks || []) {
     try {
       // Mark as processing
       await supabase
@@ -101,10 +98,20 @@ export async function GET(request: Request) {
     }
   }
 
+  let scheduled = { processed: 0, failed: 0, skipped: 0 }
+  try {
+    scheduled = await runDueScheduledAutomations(supabase)
+  } catch (e) {
+    console.error("Scheduled automations cron error:", e)
+  }
+
   return NextResponse.json({
-    message: "Tasks processed",
-    processed,
-    failed,
-    total: tasks.length,
+    message: "Cron run complete",
+    tasks: {
+      processed,
+      failed,
+      total: tasks?.length ?? 0,
+    },
+    scheduled_automations: scheduled,
   })
 }

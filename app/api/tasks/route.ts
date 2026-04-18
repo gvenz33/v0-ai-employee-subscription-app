@@ -100,7 +100,8 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
     const body = await request.json()
-    const { employee_id, prompt, title, priority = "normal" } = body
+    const employee_id = body.employee_id ?? body.ai_employee_id
+    const { prompt, title, priority = "normal" } = body
 
     if (!employee_id || !prompt) {
       if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "POST", 400, Date.now() - startTime, request)
