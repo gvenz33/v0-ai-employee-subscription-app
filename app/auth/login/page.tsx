@@ -28,12 +28,18 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       if (error) throw error
-      router.push("/dashboard")
+      if (!data.session) {
+        setError("Could not establish a session. Check that Supabase URL and anon key are set for this domain.")
+        return
+      }
+      router.refresh()
+      // Full navigation so the session cookies are always sent to middleware on first dashboard load
+      window.location.assign("/dashboard")
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {

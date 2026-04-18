@@ -120,7 +120,7 @@ export function SupportChatWidget() {
       <button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105",
+          "fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105",
           isOpen && "hidden"
         )}
         aria-label="Open support chat"
@@ -130,7 +130,7 @@ export function SupportChatWidget() {
 
       {/* Chat window */}
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 z-50 flex h-[500px] w-[380px] flex-col overflow-hidden border-border bg-card shadow-2xl">
+        <Card className="fixed bottom-6 right-6 z-40 flex h-[500px] max-h-[min(500px,calc(100vh-8rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden border-border bg-card shadow-2xl">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border bg-primary px-4 py-3">
             <div className="flex items-center gap-2">

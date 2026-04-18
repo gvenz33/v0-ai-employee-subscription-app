@@ -2,15 +2,16 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-[100] border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-3">
           <Image
@@ -41,12 +42,12 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="ghost" asChild>
-            <Link href="/auth/login">Log In</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/auth/sign-up">Get Started</Link>
-          </Button>
+          <Link href="/auth/login" className={cn(buttonVariants({ variant: "ghost" }))}>
+            Log In
+          </Link>
+          <Link href="/auth/sign-up" className={cn(buttonVariants())}>
+            Get Started
+          </Link>
         </div>
 
         <button
@@ -66,12 +67,12 @@ export function Navbar() {
             <a href="#pricing" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Pricing</a>
             <Link href="/contact" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Contact Us</Link>
             <div className="flex flex-col gap-2 pt-2">
-              <Button variant="ghost" asChild>
-                <Link href="/auth/login">Log In</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/auth/sign-up">Get Started</Link>
-              </Button>
+              <Link href="/auth/login" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-center")}>
+                Log In
+              </Link>
+              <Link href="/auth/sign-up" className={cn(buttonVariants(), "w-full justify-center")}>
+                Get Started
+              </Link>
             </div>
           </div>
         </div>
