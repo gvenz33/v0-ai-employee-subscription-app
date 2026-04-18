@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { User, Bell, Shield, Key, Save, Loader2 } from "lucide-react"
+import { AutomationEmailSetupCard } from "@/components/dashboard/automation-email-setup-card"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
@@ -180,6 +181,12 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <AutomationEmailSetupCard
+        showCrossLink
+        crossLinkHref="/dashboard/scheduled-automations"
+        crossLinkLabel="Email automations"
+      />
 
       <Card className="bg-card border-border">
         <CardHeader>

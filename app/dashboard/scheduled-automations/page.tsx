@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Loader2, Mail, Trash2 } from "lucide-react"
 import { DictationButton } from "@/components/dictation-button"
+import { AutomationEmailSetupCard } from "@/components/dashboard/automation-email-setup-card"
 
 const TIMEZONES = [
   { value: "America/Los_Angeles", label: "Pacific (US)" },
@@ -154,16 +155,17 @@ export default function ScheduledAutomationsPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Email automations</h1>
         <p className="text-muted-foreground">
-          Describe what you want (type or use the mic to dictate), pick a schedule, and we email the AI output each run
-          (uses task credits). Sending uses{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">SMTP_USER</code> /{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">SMTP_PASSWORD</code> (optional{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">SMTP_HOST</code> defaults to SiteGround outbound) or{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">RESEND_API_KEY</code>. From line defaults to{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">hello@247aiemployees.net</code> unless{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">AUTOMATION_EMAIL_FROM</code> is set.
+          Connect Gmail, Microsoft 365, or your own SMTP below (same form as Settings). Dictate or type instructions;
+          each run uses task credits. If you do not save your own mailbox, the platform may send via Resend when{" "}
+          <code className="text-xs bg-muted px-1 py-0.5 rounded">RESEND_API_KEY</code> is set on the server.
         </p>
       </div>
+
+      <AutomationEmailSetupCard
+        showCrossLink
+        crossLinkHref="/dashboard/settings"
+        crossLinkLabel="Open Settings"
+      />
 
       <Card className="border-border/50 bg-card/50">
         <CardHeader>

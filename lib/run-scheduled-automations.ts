@@ -128,6 +128,8 @@ export async function runDueScheduledAutomations(
       const bodyText = `${row.title || employee.name} (${employee.role})\n\n${text}`
 
       const emailResult = await sendAutomationDigestEmail({
+        userId: row.user_id,
+        supabase,
         to: row.delivery_email,
         subject,
         bodyText,
