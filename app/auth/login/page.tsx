@@ -1,13 +1,13 @@
 "use client"
 
 import { createClient } from "@/lib/supabase/client"
+import { signInWithPasswordAction } from "@/app/auth/login/actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { ArrowLeft, Eye, EyeOff } from "lucide-react"
 
@@ -19,26 +19,20 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isForgotPassword, setIsForgotPassword] = useState(false)
   const [resetSent, setResetSent] = useState(false)
-  const router = useRouter()
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) throw error
-      if (!data.session) {
-        setError("Could not establish a session. Check that Supabase URL and anon key are set for this domain.")
+      const formData = new FormData()
+      formData.set("email", email)
+      formData.set("password", password)
+      const result = await signInWithPasswordAction(formData)
+      if ("error" in result) {
+        setError(result.error)
         return
       }
-      router.refresh()
-      // Full navigation so the session cookies are always sent to middleware on first dashboard load
       window.location.assign("/dashboard")
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred")
