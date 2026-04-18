@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { getSupabaseAdmin } from "@/lib/supabase/admin"
+import { getTaskLimitForPlanId } from "@/lib/products"
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,21 +37,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: createError.message }, { status: 400 })
     }
 
-    // Get task limit for tier
-    const taskLimits: Record<string, number> = {
-      personal: 100,
-      entrepreneur: 500,
-      business: 2000,
-      enterprise: 999999
-    }
-
     // Create profile
     await getSupabaseAdmin().from("profiles").insert({
       id: newUser.user.id,
       email: email,
       full_name,
       subscription_tier,
-      tasks_limit: taskLimits[subscription_tier] || 100
+      tasks_limit: getTaskLimitForPlanId(subscription_tier)
     })
 
     // Create affiliate record

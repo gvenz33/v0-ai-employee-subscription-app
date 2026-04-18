@@ -18,8 +18,8 @@ export const PLANS: Plan[] = [
     id: "personal",
     name: "Personal",
     description: "Perfect for individuals looking to boost productivity",
-    monthlyPriceInCents: 900, // $9/month
-    annualPriceInCents: 9000, // $90/year (10 months, 2 months free)
+    monthlyPriceInCents: 1900, // $19/month
+    annualPriceInCents: 19000, // $190/year (10 months, 2 months free)
     features: [
       "5 AI Employees",
       "50 tasks per month",
@@ -37,8 +37,8 @@ export const PLANS: Plan[] = [
     id: "entrepreneur",
     name: "Entrepreneur",
     description: "Scale your solo business with AI-powered automation",
-    monthlyPriceInCents: 2900, // $29/month
-    annualPriceInCents: 29000, // $290/year (10 months, 2 months free)
+    monthlyPriceInCents: 4900, // $49/month
+    annualPriceInCents: 49000, // $490/year (10 months, 2 months free)
     features: [
       "10 AI Employees",
       "200 tasks per month",
@@ -57,8 +57,8 @@ export const PLANS: Plan[] = [
     id: "business",
     name: "Business",
     description: "Comprehensive AI workforce for growing teams",
-    monthlyPriceInCents: 7900, // $79/month
-    annualPriceInCents: 79000, // $790/year (10 months, 2 months free)
+    monthlyPriceInCents: 9900, // $99/month
+    annualPriceInCents: 99000, // $990/year (10 months, 2 months free)
     popular: true,
     features: [
       "20 AI Employees",
@@ -120,6 +120,62 @@ export function getAnnualSavings(planId: string): number {
   if (!plan) return 0
   const monthlyCostForYear = plan.monthlyPriceInCents * 12
   return monthlyCostForYear - plan.annualPriceInCents
+}
+
+/** Stripe `price.unit_amount` + recurring interval → plan id (exact match on current catalog). */
+export function getPlanIdFromStripeUnitAmount(
+  unitAmountCents: number,
+  interval: "month" | "year",
+): string | undefined {
+  for (const plan of PLANS) {
+    const target = interval === "year" ? plan.annualPriceInCents : plan.monthlyPriceInCents
+    if (target === unitAmountCents) return plan.id
+  }
+  return undefined
+}
+
+/**
+ * Map Stripe subscription line item to plan id when price IDs predate a pricing change.
+ * Falls back to tier thresholds on current monthly/annual amounts.
+ */
+export function inferPlanIdFromStripeUnitAmount(
+  unitAmountCents: number,
+  interval: "month" | "year",
+): string {
+  const exact = getPlanIdFromStripeUnitAmount(unitAmountCents, interval)
+  if (exact) return exact
+
+  const legacyMonthly: [number, string][] = [
+    [900, "personal"],
+    [2900, "entrepreneur"],
+    [7900, "business"],
+    [19900, "enterprise"],
+  ]
+  const legacyAnnual: [number, string][] = [
+    [9000, "personal"],
+    [29000, "entrepreneur"],
+    [79000, "business"],
+    [199000, "enterprise"],
+  ]
+  const legacy = interval === "year" ? legacyAnnual : legacyMonthly
+  for (const [amt, id] of legacy) {
+    if (amt === unitAmountCents) return id
+  }
+
+  if (interval === "month") {
+    if (unitAmountCents >= 19900) return "enterprise"
+    if (unitAmountCents >= 9900) return "business"
+    if (unitAmountCents >= 4900) return "entrepreneur"
+    return "personal"
+  }
+  if (unitAmountCents >= 199000) return "enterprise"
+  if (unitAmountCents >= 99000) return "business"
+  if (unitAmountCents >= 49000) return "entrepreneur"
+  return "personal"
+}
+
+export function getTaskLimitForPlanId(planId: string): number {
+  return getPlanById(planId)?.limits.tasksPerMonth ?? 50
 }
 
 // Tier hierarchy for access control
@@ -623,24 +679,24 @@ export const TOKEN_PACKS: TokenPack[] = [
     name: "Boost Pack",
     description: "Perfect for occasional overages",
     tasks: 50,
-    priceInCents: 999, // $9.99
+    priceInCents: 1499, // $14.99 — includes margin vs. estimated LLM provider cost
   },
   {
     id: "token-pack-medium",
     name: "Power Pack",
     description: "Best value for growing teams",
     tasks: 150,
-    priceInCents: 2499, // $24.99
-    savings: "Save 17%",
+    priceInCents: 3999, // $39.99
+    savings: "Best value",
     popular: true,
   },
   {
     id: "token-pack-large",
-    name: "Enterprise Pack",
-    description: "Maximum tasks for heavy usage",
+    name: "Scale Pack",
+    description: "Maximum task credits for heavy usage",
     tasks: 500,
-    priceInCents: 6999, // $69.99
-    savings: "Save 30%",
+    priceInCents: 9999, // $99.99
+    savings: "Lowest per-task cost",
   },
 ]
 

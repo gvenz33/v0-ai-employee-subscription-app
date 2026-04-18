@@ -45,15 +45,15 @@ IMPORTANT INFORMATION:
 - Admin email for escalation: gvenz33@gmail.com
 
 PRICING TIERS:
-- Personal: $9/month - 5 AI employees, 100 tasks/month
-- Entrepreneur: $29/month - 10 AI employees, 500 tasks/month  
-- Business: $79/month - 15 AI employees, 2000 tasks/month
-- Enterprise: $199/month - All 30 AI employees, unlimited tasks
+- Personal: $19/month - 5 AI employees, 50 tasks/month
+- Entrepreneur: $49/month - 10 AI employees, 200 tasks/month  
+- Business: $99/month - 20 AI employees, 1,000 tasks/month
+- Enterprise: $199/month - All 30 AI employees, effectively unlimited tasks
 
-TOKEN PACKS (for exceeding limits):
-- Boost Pack: 50 tasks for $9.99
-- Power Pack: 150 tasks for $24.99 (save 17%)
-- Enterprise Pack: 500 tasks for $69.99 (save 30%)
+TOKEN PACKS (add task credits to monthly cap):
+- Boost Pack: 50 tasks for $14.99
+- Power Pack: 150 tasks for $39.99
+- Scale Pack: 500 tasks for $99.99
 
 A LA CARTE: Users can unlock individual premium AI employees for $9.99/month each.
 

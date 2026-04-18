@@ -1,5 +1,6 @@
 import { getStripe } from '@/lib/stripe'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
+import { getTaskLimitForPlanId, inferPlanIdFromStripeUnitAmount } from '@/lib/products'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 
@@ -64,20 +65,13 @@ export async function POST(req: Request) {
             })
         }
       } else if (userId && planId) {
-        // Handle subscription checkout
-        const taskLimits: Record<string, number> = {
-          starter: 50,
-          pro: 500,
-          enterprise: 10000
-        }
-
-        // Update user's subscription
+        // Handle subscription checkout (planId must match PLANS ids: personal, entrepreneur, business, enterprise)
         await getSupabaseAdmin()
           .from('profiles')
           .update({
             subscription_tier: planId,
             stripe_subscription_id: session.subscription as string,
-            tasks_limit: taskLimits[planId] || 50,
+            tasks_limit: getTaskLimitForPlanId(planId),
             updated_at: new Date().toISOString()
           })
           .eq('id', userId)
@@ -97,24 +91,17 @@ export async function POST(req: Request) {
         .single()
 
       if (profile) {
-        // Determine the plan from the subscription
-        let tier = 'free'
-        const amount = subscription.items.data[0]?.price?.unit_amount || 0
-        
-        if (amount >= 9900) tier = 'enterprise'
-        else if (amount >= 4900) tier = 'pro'
-        
-        const taskLimits: Record<string, number> = {
-          free: 50,
-          pro: 500,
-          enterprise: 10000
-        }
+        const price = subscription.items.data[0]?.price
+        const unitAmount = price?.unit_amount ?? 0
+        const interval = price?.recurring?.interval === 'year' ? 'year' : 'month'
+        const planId = inferPlanIdFromStripeUnitAmount(unitAmount, interval)
 
         await getSupabaseAdmin()
           .from('profiles')
           .update({
-            subscription_tier: subscription.status === 'active' ? tier : 'free',
-            tasks_limit: subscription.status === 'active' ? taskLimits[tier] : 50,
+            subscription_tier: subscription.status === 'active' ? planId : 'free',
+            tasks_limit:
+              subscription.status === 'active' ? getTaskLimitForPlanId(planId) : 50,
             updated_at: new Date().toISOString()
           })
           .eq('id', profile.id)

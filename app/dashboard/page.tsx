@@ -60,7 +60,7 @@ export default async function DashboardPage() {
         <TaskUsageCard 
           tasksUsed={totalTasks} 
           taskLimit={taskLimit} 
-          subscriptionTier={profile?.subscription_tier || "starter"} 
+          subscriptionTier={profile?.subscription_tier || "personal"} 
         />
 
         <Card className="bg-card border-border">

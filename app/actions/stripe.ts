@@ -187,8 +187,8 @@ export async function createTokenPackCheckout(packId: string) {
         quantity: 1
       }
     ],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?tokens_purchased=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?tokens_canceled=true`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/tokens?tokens_purchased=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/tokens?tokens_canceled=true`,
     metadata: {
       user_id: user.id,
       pack_id: packId,
@@ -196,7 +196,7 @@ export async function createTokenPackCheckout(packId: string) {
       type: 'token_pack'
     },
     ui_mode: 'embedded',
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?session_id={CHECKOUT_SESSION_ID}`
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/tokens?session_id={CHECKOUT_SESSION_ID}`
   })
 
   return { clientSecret: session.client_secret }

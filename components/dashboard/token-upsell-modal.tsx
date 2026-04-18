@@ -186,11 +186,14 @@ export function TokenUpsellModal({
             </div>
 
             <div className="text-center text-xs text-muted-foreground">
-              <p>Tasks never expire and are added to your account immediately.</p>
+              <p>Task credits are added to your monthly cap immediately after purchase.</p>
               <p className="mt-1">
-                Want unlimited tasks?{" "}
+                <a href="/dashboard/tokens" className="text-primary hover:underline">
+                  How tokens & pricing work
+                </a>
+                {" · "}
                 <a href="/dashboard/billing" className="text-primary hover:underline">
-                  Upgrade to Enterprise
+                  Change subscription
                 </a>
               </p>
             </div>
