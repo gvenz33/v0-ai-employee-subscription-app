@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Loader2, Mail, Trash2 } from "lucide-react"
+import { Loader2, Mail, Pencil, Trash2 } from "lucide-react"
 import { DictationButton } from "@/components/dictation-button"
 import { AutomationEmailSetupCard } from "@/components/dashboard/automation-email-setup-card"
 
@@ -84,6 +84,7 @@ export default function ScheduledAutomationsPage() {
   const [deliveryEmail, setDeliveryEmail] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [editingAutomationId, setEditingAutomationId] = useState<string | null>(null)
 
   useEffect(() => {
     const loadEmail = async () => {
@@ -100,7 +101,40 @@ export default function ScheduledAutomationsPage() {
 
   const employeeName = (id: string) => AI_EMPLOYEES.find((e) => e.id === id)?.name ?? id
 
-  const handleCreate = async () => {
+  const resetFormForNew = () => {
+    setEditingAutomationId(null)
+    setEmployeeId("")
+    setTitle("")
+    setPrompt("")
+    setTimezone("America/Los_Angeles")
+    setTimeLocal("07:00")
+    setFrequency("daily")
+    setWeekday("1")
+    setFormError(null)
+    void (async () => {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user?.email) setDeliveryEmail(user.email)
+    })()
+  }
+
+  const startEdit = (a: Automation) => {
+    setEditingAutomationId(a.id)
+    setEmployeeId(a.ai_employee_id)
+    setTitle(a.title || "")
+    setPrompt(a.prompt)
+    setTimezone(a.timezone)
+    setTimeLocal(a.time_local)
+    setFrequency(a.frequency)
+    setWeekday(String(a.weekday ?? 0))
+    setDeliveryEmail(a.delivery_email)
+    setFormError(null)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handleSaveAutomation = async () => {
     setFormError(null)
     if (!employeeId || !prompt.trim() || !deliveryEmail.trim()) {
       setFormError("Choose an AI employee, enter instructions, and confirm the delivery email.")
@@ -108,27 +142,35 @@ export default function ScheduledAutomationsPage() {
     }
     setSubmitting(true)
     try {
-      const res = await fetch("/api/scheduled-automations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ai_employee_id: employeeId,
-          title: title.trim() || undefined,
-          prompt: prompt.trim(),
-          timezone,
-          time_local: timeLocal,
-          frequency,
-          weekday: frequency === "weekly" ? Number(weekday) : null,
-          delivery_email: deliveryEmail.trim(),
-        }),
-      })
+      const body = {
+        ai_employee_id: employeeId,
+        title: title.trim() || undefined,
+        prompt: prompt.trim(),
+        timezone,
+        time_local: timeLocal,
+        frequency,
+        weekday: frequency === "weekly" ? Number(weekday) : null,
+        delivery_email: deliveryEmail.trim(),
+      }
+
+      const res = editingAutomationId
+        ? await fetch(`/api/scheduled-automations/${editingAutomationId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          })
+        : await fetch("/api/scheduled-automations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          })
+
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
         setFormError(typeof json.error === "string" ? json.error : "Could not save automation")
         return
       }
-      setTitle("")
-      setPrompt("")
+      resetFormForNew()
       mutate("/api/scheduled-automations")
     } finally {
       setSubmitting(false)
@@ -145,8 +187,13 @@ export default function ScheduledAutomationsPage() {
   }
 
   const remove = async (id: string) => {
-    if (!confirm("Delete this automation?")) return
-    await fetch(`/api/scheduled-automations/${id}`, { method: "DELETE" })
+    if (!confirm("Delete this automation? This cannot be undone.")) return
+    const res = await fetch(`/api/scheduled-automations/${id}`, { method: "DELETE" })
+    if (!res.ok) {
+      setFormError("Could not delete automation.")
+      return
+    }
+    if (editingAutomationId === id) resetFormForNew()
     mutate("/api/scheduled-automations")
   }
 
@@ -171,10 +218,18 @@ export default function ScheduledAutomationsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-primary" />
-            New recurring email
+            {editingAutomationId ? "Edit recurring email" : "New recurring email"}
           </CardTitle>
           <CardDescription>
             Write the full instructions and output format in the prompt (the AI employee only sees this text each run).
+            {editingAutomationId && (
+              <>
+                {" "}
+                <Button type="button" variant="link" className="h-auto p-0 text-primary" onClick={resetFormForNew}>
+                  Cancel edit
+                </Button>
+              </>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -299,16 +354,25 @@ export default function ScheduledAutomationsPage() {
 
           {formError && <p className="text-sm text-destructive">{formError}</p>}
 
-          <Button onClick={handleCreate} disabled={submitting}>
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Saving…
-              </>
-            ) : (
-              "Save automation"
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={handleSaveAutomation} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Saving…
+                </>
+              ) : editingAutomationId ? (
+                "Update automation"
+              ) : (
+                "Save automation"
+              )}
+            </Button>
+            {editingAutomationId && (
+              <Button type="button" variant="outline" onClick={resetFormForNew} disabled={submitting}>
+                Cancel
+              </Button>
             )}
-          </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -345,7 +409,7 @@ export default function ScheduledAutomationsPage() {
                   </p>
                   {a.last_error && <p className="text-xs text-destructive break-words">Last error: {a.last_error}</p>}
                 </div>
-                <div className="flex items-center gap-4 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <div className="flex items-center gap-2">
                     <Label htmlFor={`active-${a.id}`} className="text-xs text-muted-foreground">
                       Active
@@ -356,6 +420,15 @@ export default function ScheduledAutomationsPage() {
                       onCheckedChange={(v) => setActive(a.id, v)}
                     />
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => startEdit(a)}
+                    aria-label="Edit automation"
+                    title="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => remove(a.id)} aria-label="Delete automation">
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
