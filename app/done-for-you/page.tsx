@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Navbar } from "@/components/landing/navbar"
 import { Footer } from "@/components/landing/footer"
+import { CustomBuildFaq } from "@/components/landing/custom-build-faq"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Check, Hammer, Mail } from "lucide-react"
 
@@ -125,49 +126,7 @@ export default function DoneForYouPage() {
           </div>
         </section>
 
-        <section className="border-t border-border/50 px-6 py-16">
-          <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-8">
-            <h2 className="font-display text-xl font-semibold text-foreground">Custom build FAQ</h2>
-            <dl className="mt-6 space-y-6 text-sm text-muted-foreground">
-              <div>
-                <dt className="font-medium text-foreground">Is this the same as self-serve?</dt>
-                <dd className="mt-1 leading-relaxed">
-                  No. Self-serve is built for speed and affordability: ready-made AI Employees, templates, and workflows
-                  you adapt yourself—perfect when you want to run lean and experiment. A custom build is different: we
-                  architect automations around your real pipelines, approvals, tone, and tools. You get bespoke prompts,
-                  integrations, testing, and ongoing tuning—so outputs feel like your business, not a generic assistant.
-                  If the stakes are high enough that &quot;close enough&quot; costs you deals or time, the custom route is
-                  built for that.
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium text-foreground">Why not stay on DIY if the platform is the same?</dt>
-                <dd className="mt-1 leading-relaxed">
-                  The underlying technology can overlap, but the experience is not. DIY puts configuration and iteration
-                  on you. A custom engagement puts senior implementation on us: we shoulder design tradeoffs, edge cases,
-                  and handoffs so your team is not stuck becoming accidental automation engineers. You buy back focus and
-                  velocity.
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium text-foreground">Do I need $1M revenue exactly?</dt>
-                <dd className="mt-1 leading-relaxed">
-                  No—it is a rule of thumb for fit. If complexity, volume, or revenue means mistakes are expensive, a
-                  custom build often pays for itself. If you are unsure, book a call; we will tell you candidly whether DIY
-                  is enough or custom is warranted.
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium text-foreground">Can we start co-built and move to fully custom later?</dt>
-                <dd className="mt-1 leading-relaxed">
-                  Often yes. Many teams begin with a focused custom rollout, then expand scope or add retained
-                  optimization as usage grows. We structure the roadmap so you are not locked in the wrong shape on day
-                  one.
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </section>
+        <CustomBuildFaq />
       </main>
       <Footer />
     </div>
