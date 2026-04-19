@@ -7,11 +7,11 @@ import { ArrowRight, Check, Hammer, Mail } from "lucide-react"
 const bookCallHref = process.env.NEXT_PUBLIC_BOOK_CALL_URL ?? "/contact"
 
 const deliverables = [
-  "Discovery and workflow mapping aligned to how your team actually works",
-  "Custom agent stack and prompts tuned to your offers, tone, and guardrails",
-  "Integrations with the tools you already use (CRM, inbox, scheduling, and more)",
-  "Onboarding for your operators plus documentation so knowledge stays in the business",
-  "Ongoing maintenance, monitoring, and iteration as your process evolves",
+  "Bespoke discovery: we map how work really flows—not how the slide deck says it should",
+  "Custom-built agent stack, prompts, and guardrails matched to your offers and brand voice",
+  "Deep integrations with the tools you already rely on (CRM, inbox, scheduling, and more)",
+  "Hands-on onboarding plus documentation so your team owns the system, not a black box",
+  "Ongoing tuning, monitoring, and iteration as volume, seasons, and offers change",
 ]
 
 const processSteps = [
@@ -30,16 +30,16 @@ export default function DoneForYouPage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary">
               <Hammer className="h-4 w-4" />
-              <span>Done-for-you implementation</span>
+              <span>Custom-built for how you actually work</span>
             </div>
             <h1 className="font-display text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              We build and run your AI back office with you
+              A fully custom AI back office—not a template
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
-              For serious operators who want a custom agent stack, workflow design, onboarding, and ongoing
-              maintenance—not another tool to figure out alone. Typical fit: roughly{" "}
-              <strong className="font-medium text-foreground">$1M+ annual revenue</strong> or teams with heavy inbound
-              volume and process complexity.
+              We design, build, and refine automations around your pipelines, your voice, and your stack—so you get
+              outcomes that match your business, not a generic checklist. Typical fit: serious operators with roughly{" "}
+              <strong className="font-medium text-foreground">$1M+ annual revenue</strong> or heavy inbound volume where
+              off-the-shelf setups leave money on the table.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" className="gap-2 px-8" asChild>
@@ -60,7 +60,9 @@ export default function DoneForYouPage() {
 
         <section className="px-6 py-20">
           <div className="mx-auto max-w-5xl">
-            <h2 className="text-center font-display text-2xl font-bold text-foreground sm:text-3xl">What you get</h2>
+            <h2 className="text-center font-display text-2xl font-bold text-foreground sm:text-3xl">
+              What a custom build includes
+            </h2>
             <ul className="mx-auto mt-10 max-w-2xl space-y-4">
               {deliverables.map((line) => (
                 <li key={line} className="flex gap-3 text-muted-foreground">
@@ -89,26 +91,27 @@ export default function DoneForYouPage() {
 
         <section className="px-6 py-20">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">Investment (indicative ranges)</h2>
+            <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">Two ways to go custom</h2>
             <p className="mt-4 text-muted-foreground">
-              Final quotes depend on scope, systems, and compliance needs. We will spell everything out before kickoff.
+              Every engagement is quoted to your scope—integrations, compliance, and how hands-on you want us. On a call
+              we&apos;ll recommend the right build and walk through what &quot;done&quot; looks like for you.
             </p>
             <div className="mt-10 grid gap-6 text-left sm:grid-cols-2">
               <div className="rounded-2xl border border-border/50 bg-card p-6">
-                <h3 className="font-display font-semibold text-foreground">Done-with-you</h3>
-                <p className="mt-2 text-sm text-muted-foreground">We co-build with your team; you operate day to day.</p>
-                <p className="mt-4 text-2xl font-bold text-foreground">$500–$2,500</p>
-                <p className="text-sm text-muted-foreground">setup (typical range)</p>
-                <p className="mt-2 text-lg font-semibold text-foreground">$99–$499/mo</p>
-                <p className="text-sm text-muted-foreground">ongoing light support</p>
+                <h3 className="font-display font-semibold text-foreground">Co-built (guided custom)</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  We architect and configure a tailored stack together—you stay close to the controls while we handle the
+                  heavy lifting: workflow design, prompt engineering, and launch. Ideal when you want a custom build but
+                  your team will run day-to-day operations in-house.
+                </p>
               </div>
               <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
-                <h3 className="font-display font-semibold text-foreground">Done-for-you</h3>
-                <p className="mt-2 text-sm text-muted-foreground">We implement, tune, and maintain the full stack.</p>
-                <p className="mt-4 text-2xl font-bold text-foreground">$5k–$10k</p>
-                <p className="text-sm text-muted-foreground">setup (typical range)</p>
-                <p className="mt-2 text-lg font-semibold text-foreground">$500–$3k/mo</p>
-                <p className="text-sm text-muted-foreground">ongoing maintenance &amp; iteration</p>
+                <h3 className="font-display font-semibold text-foreground">Fully custom (white-glove)</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  We own end-to-end implementation: bespoke automations, rigorous testing, brand-true outputs, and an
+                  ongoing cadence of maintenance and improvement. Best when throughput, risk, or complexity mean you
+                  cannot afford generic templates or DIY trial-and-error.
+                </p>
               </div>
             </div>
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -116,7 +119,7 @@ export default function DoneForYouPage() {
                 <Link href={bookCallHref}>Book a discovery call</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/#pricing">Compare self-serve plans</Link>
+                <Link href="/#pricing">Browse self-serve (DIY) plans</Link>
               </Button>
             </div>
           </div>
@@ -124,26 +127,42 @@ export default function DoneForYouPage() {
 
         <section className="border-t border-border/50 px-6 py-16">
           <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-8">
-            <h2 className="font-display text-xl font-semibold text-foreground">Done-for-you FAQ</h2>
+            <h2 className="font-display text-xl font-semibold text-foreground">Custom build FAQ</h2>
             <dl className="mt-6 space-y-6 text-sm text-muted-foreground">
               <div>
-                <dt className="font-medium text-foreground">Is this the same product as self-serve?</dt>
+                <dt className="font-medium text-foreground">Is this the same as self-serve?</dt>
                 <dd className="mt-1 leading-relaxed">
-                  Yes—the same automation engine and AI Employees power both tracks. Done-for-you is packaging plus
-                  implementation and ongoing care.
+                  No. Self-serve is built for speed and affordability: ready-made AI Employees, templates, and workflows
+                  you adapt yourself—perfect when you want to run lean and experiment. A custom build is different: we
+                  architect automations around your real pipelines, approvals, tone, and tools. You get bespoke prompts,
+                  integrations, testing, and ongoing tuning—so outputs feel like your business, not a generic assistant.
+                  If the stakes are high enough that &quot;close enough&quot; costs you deals or time, the custom route is
+                  built for that.
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium text-foreground">Why not stay on DIY if the platform is the same?</dt>
+                <dd className="mt-1 leading-relaxed">
+                  The underlying technology can overlap, but the experience is not. DIY puts configuration and iteration
+                  on you. A custom engagement puts senior implementation on us: we shoulder design tradeoffs, edge cases,
+                  and handoffs so your team is not stuck becoming accidental automation engineers. You buy back focus and
+                  velocity.
                 </dd>
               </div>
               <div>
                 <dt className="font-medium text-foreground">Do I need $1M revenue exactly?</dt>
                 <dd className="mt-1 leading-relaxed">
-                  No. It is a rule of thumb for fit: high enough volume that custom workflows and maintenance pay off. If
-                  you are unsure, book a call and we will tell you honestly.
+                  No—it is a rule of thumb for fit. If complexity, volume, or revenue means mistakes are expensive, a
+                  custom build often pays for itself. If you are unsure, book a call; we will tell you candidly whether DIY
+                  is enough or custom is warranted.
                 </dd>
               </div>
               <div>
-                <dt className="font-medium text-foreground">Can we start with done-with-you and upgrade?</dt>
+                <dt className="font-medium text-foreground">Can we start co-built and move to fully custom later?</dt>
                 <dd className="mt-1 leading-relaxed">
-                  Often yes. Many teams begin with a focused build, then add retained maintenance as usage grows.
+                  Often yes. Many teams begin with a focused custom rollout, then expand scope or add retained
+                  optimization as usage grows. We structure the roadmap so you are not locked in the wrong shape on day
+                  one.
                 </dd>
               </div>
             </dl>
