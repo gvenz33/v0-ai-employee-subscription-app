@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
+import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const faqs = [
+const faqs: { question: string; answer: ReactNode }[] = [
   {
     question: "How secure is my data with 247 AI Employees?",
     answer:
-      "Security is our top priority. All data is encrypted at rest and in transit using AES-256 and TLS 1.3 protocols. We use Supabase for our database with Row Level Security (RLS) enabled, ensuring users can only access their own data. Our payment processing is handled by Stripe, a PCI DSS Level 1 certified provider. We never store sensitive payment information on our servers. Additionally, all API communications are authenticated and rate-limited to prevent abuse.",
+      "Your data is encrypted at rest and in transit (AES-256 and TLS 1.3). We use Supabase with Row Level Security so users only access their own data. Payments run through Stripe (PCI DSS Level 1); we do not store card details on our servers. API access is authenticated and rate-limited. For compliance-heavy done-for-you engagements, we scope retention and access in writing.",
   },
   {
     question: "What are AI Employees and how do they work?",
@@ -23,7 +24,7 @@ const faqs = [
   {
     question: "What happens if I exceed my monthly task limit?",
     answer:
-      "When you reach your monthly task limit, you have several options to keep working. First, you can purchase Token Packs directly from your dashboard - we offer three affordable options: Boost Pack (50 tasks for $9.99), Power Pack (150 tasks for $24.99 - save 17%), or Enterprise Pack (500 tasks for $69.99 - save 30%). These tokens are added instantly to your account and never expire. Alternatively, you can upgrade to a higher subscription tier for more monthly tasks and access to additional AI Employees. We also send notifications when you reach 80% and 100% of your limit so you can plan ahead.",
+      "When you reach your monthly task limit, you can buy Token Packs in the dashboard: Boost Pack (50 tasks, about $14.99), Power Pack (150 tasks, about $39.99), or Scale Pack (500 tasks, about $99.99). Credits apply immediately and do not expire. You can also upgrade your subscription for a higher monthly allowance and more AI Employees. We notify you at 80% and 100% of usage.",
   },
   {
     question: "Can I access premium AI Employees without upgrading my full plan?",
@@ -42,8 +43,17 @@ const faqs = [
   },
   {
     question: "Can I use 247 AI Employees for my team or business?",
-    answer:
-      "Absolutely! Our Enterprise plan is designed for teams and businesses. It includes unlimited AI Employees, priority support, custom integrations, and dedicated account management. Contact us for volume pricing if you need to deploy AI Employees across multiple team members or departments.",
+    answer: (
+      <>
+        Yes. Most teams start with a self-serve plan—pick the tier that matches task volume and how many AI Employees
+        you need. If you want us to design workflows, implement integrations, and maintain the stack for you (common when
+        revenue and complexity are high), see{" "}
+        <Link href="/done-for-you" className="font-medium text-primary underline-offset-4 hover:underline">
+          done for you
+        </Link>
+        .
+      </>
+    ),
   },
 ]
 
@@ -54,7 +64,7 @@ function FAQItem({
   onToggle,
 }: {
   question: string
-  answer: string
+  answer: ReactNode
   isOpen: boolean
   onToggle: () => void
 }) {
@@ -79,7 +89,7 @@ function FAQItem({
         )}
       >
         <div className="overflow-hidden">
-          <p className="text-muted-foreground leading-relaxed">{answer}</p>
+          <div className="text-muted-foreground leading-relaxed [&_a]:text-primary">{answer}</div>
         </div>
       </div>
     </div>

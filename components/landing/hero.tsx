@@ -1,7 +1,6 @@
-import Link from "next/link"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { ArrowRight, Sparkles, Users, Zap } from "lucide-react"
+import { Users, Zap, Clock } from "lucide-react"
+import { PathChoice } from "@/components/landing/path-choice"
 
 export function Hero() {
   return (
@@ -24,55 +23,57 @@ export function Hero() {
         </div>
 
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary">
-          <Sparkles className="h-4 w-4" />
-          <span>The future of work is here</span>
+          <Clock className="h-4 w-4" />
+          <span>Your small-business AI back office</span>
         </div>
 
         <h1 className="font-display text-balance text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-          Hire AI Employees{" "}
+          Save time. Cut chaos.{" "}
           <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            That Actually Work
+            Follow up faster
           </span>
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
-          Deploy intelligent AI agents that automate sales, marketing, customer
-          support, and more. Scale your team without the overhead.
+          One platform for admin help, lead handling, inbox cleanup, content support, simple SOPs, reminders, and
+          lightweight reporting—without hiring a bigger team.
         </p>
 
-        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Button size="lg" className="gap-2 px-8" asChild>
-            <Link href="/auth/sign-up">
-              Start Free Trial
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-          <Button size="lg" variant="outline" className="gap-2 px-8" asChild>
-            <a href="#agents">View AI Employees</a>
-          </Button>
-        </div>
+        <PathChoice />
+
+        <p className="mt-10 text-sm text-muted-foreground">
+          Want the full roster first?{" "}
+          <a href="/#agents" className="font-medium text-primary underline-offset-4 hover:underline">
+            Browse all AI Employees
+          </a>{" "}
+          or{" "}
+          <a href="/#pricing" className="font-medium text-primary underline-offset-4 hover:underline">
+            see self-serve pricing
+          </a>
+          .
+        </p>
 
         <div className="mx-auto mt-16 grid max-w-xl grid-cols-3 gap-8">
           <div className="flex flex-col items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Users className="h-5 w-5 text-primary" />
+              <Clock className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-2xl font-bold text-foreground">30+</span>
-            <span className="text-sm text-muted-foreground">AI Employees</span>
+            <span className="text-2xl font-bold text-foreground">Hours back</span>
+            <span className="text-sm text-muted-foreground">Every week</span>
           </div>
           <div className="flex flex-col items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Zap className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-2xl font-bold text-foreground">10x</span>
-            <span className="text-sm text-muted-foreground">Faster Output</span>
+            <span className="text-2xl font-bold text-foreground">Leads &amp; follow-up</span>
+            <span className="text-sm text-muted-foreground">Less slipping through</span>
           </div>
           <div className="flex flex-col items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <Users className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-2xl font-bold text-foreground">24/7</span>
-            <span className="text-sm text-muted-foreground">Always On</span>
+            <span className="text-2xl font-bold text-foreground">30+ roles</span>
+            <span className="text-sm text-muted-foreground">Ready to deploy</span>
           </div>
         </div>
       </div>

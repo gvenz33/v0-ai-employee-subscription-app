@@ -1,35 +1,41 @@
-import { Bot, BarChart3, Shield, Zap, Clock, Settings } from "lucide-react"
+import { Bell, FileText, Inbox, LayoutDashboard, Megaphone, Users } from "lucide-react"
 
 const features = [
   {
-    icon: Bot,
-    title: "Specialized AI Agents",
-    description: "Each AI employee is trained for specific roles - sales, marketing, support, development, and more.",
+    icon: Users,
+    title: "Leads & follow-up",
+    description:
+      "Respond to inquiries, draft follow-ups, and keep conversations moving so opportunities do not go cold.",
   },
   {
-    icon: Zap,
-    title: "Instant Deployment",
-    description: "Hire and deploy AI employees in minutes. No training period required, they start working immediately.",
+    icon: Inbox,
+    title: "Inbox & admin",
+    description:
+      "Triage messages, summarize threads, and turn noise into clear next steps—without living in your inbox.",
   },
   {
-    icon: BarChart3,
-    title: "Real-Time Analytics",
-    description: "Track performance, task completion, and ROI with comprehensive dashboards and reports.",
+    icon: Megaphone,
+    title: "Content support",
+    description:
+      "Repurpose what you already made into posts, emails, and updates so you stay visible without a full marketing team.",
   },
   {
-    icon: Shield,
-    title: "Enterprise Security",
-    description: "Bank-level encryption, SOC 2 compliance, and role-based access controls keep your data safe.",
+    icon: FileText,
+    title: "Simple SOPs",
+    description:
+      "Document how work gets done, tighten handoffs, and make repeat tasks easier for you or a small team.",
   },
   {
-    icon: Clock,
-    title: "24/7 Availability",
-    description: "Your AI employees never sleep, take breaks, or call in sick. Continuous productivity around the clock.",
+    icon: Bell,
+    title: "Reminders & nudges",
+    description:
+      "Stay on top of renewals, callbacks, and follow-through so nothing important depends on memory alone.",
   },
   {
-    icon: Settings,
-    title: "Custom Configuration",
-    description: "Fine-tune each AI employee's behavior, tone, and workflows to match your business processes.",
+    icon: LayoutDashboard,
+    title: "Light reporting",
+    description:
+      "See what ran, what completed, and where time went—enough to improve the week without a BI project.",
   },
 ]
 
@@ -39,10 +45,11 @@ export function Features() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-display text-balance text-3xl font-bold text-foreground sm:text-4xl">
-            Everything you need to scale with AI
+            A back office that runs lean
           </h2>
           <p className="mt-4 text-pretty text-lg text-muted-foreground">
-            Our platform provides the tools and infrastructure to manage your AI workforce effectively.
+            The same core platform powers self-serve templates and done-for-you implementations—pick the path that
+            fits, get value without the fluff.
           </p>
         </div>
 
@@ -55,12 +62,8 @@ export function Features() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
                 <feature.icon className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-display text-lg font-semibold text-foreground">
-                {feature.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {feature.description}
-              </p>
+              <h3 className="font-display text-lg font-semibold text-foreground">{feature.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
             </div>
           ))}
         </div>

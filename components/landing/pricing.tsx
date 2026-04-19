@@ -7,18 +7,31 @@ import { Button } from "@/components/ui/button"
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+function planDisplayName(planId: string, fallback: string) {
+  if (planId === "enterprise") return "Founder's"
+  return fallback
+}
+
 export function Pricing() {
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month")
 
   return (
-    <section id="pricing" className="px-6 py-24">
+    <section id="pricing" className="scroll-mt-24 px-6 py-24">
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-display text-balance text-3xl font-bold text-foreground sm:text-4xl">
-            Hire Your AI Workforce Today
+            Self-serve plans
           </h2>
           <p className="mt-4 text-pretty text-lg text-muted-foreground">
-            From personal productivity to enterprise operations. Save 2 months with annual billing.
+            Pick a monthly tier and start with templates and workflows in minutes. Save about two months with annual
+            billing.
+          </p>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Want implementation and ongoing maintenance instead?{" "}
+            <Link href="/done-for-you" className="font-medium text-primary underline-offset-4 hover:underline">
+              See done-for-you
+            </Link>
+            .
           </p>
         </div>
 
@@ -86,7 +99,7 @@ export function Pricing() {
 
                 <div>
                   <h3 className="font-display text-lg font-semibold text-foreground">
-                    {plan.name}
+                    {planDisplayName(plan.id, plan.name)}
                   </h3>
                   <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
                     {plan.description}
@@ -133,7 +146,7 @@ export function Pricing() {
                   asChild
                 >
                   <Link href={`/auth/sign-up?plan=${plan.id}&interval=${billingInterval}`}>
-                    {plan.id === "enterprise" ? "Contact Sales" : "Get Started"}
+                    Get Started
                   </Link>
                 </Button>
               </div>

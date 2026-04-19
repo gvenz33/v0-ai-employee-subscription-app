@@ -27,15 +27,21 @@ export function Navbar() {
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
-          <a href="#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+          <a href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Features
           </a>
-          <a href="#agents" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+          <a href="/#starter" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            Starters
+          </a>
+          <a href="/#agents" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             AI Employees
           </a>
-          <a href="#pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+          <a href="/#pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Pricing
           </a>
+          <Link href="/done-for-you" className="text-sm font-medium text-foreground transition-colors hover:text-primary">
+            Done for you
+          </Link>
           <Link href="/contact" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Contact Us
           </Link>
@@ -62,9 +68,11 @@ export function Navbar() {
       {mobileOpen && (
         <div className="border-t border-border/50 bg-background px-6 pb-6 md:hidden">
           <div className="flex flex-col gap-4 pt-4">
-            <a href="#features" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Features</a>
-            <a href="#agents" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>AI Employees</a>
-            <a href="#pricing" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Pricing</a>
+            <a href="/#features" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Features</a>
+            <a href="/#starter" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Starters</a>
+            <a href="/#agents" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>AI Employees</a>
+            <a href="/#pricing" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Pricing</a>
+            <Link href="/done-for-you" className="text-sm font-medium text-foreground" onClick={() => setMobileOpen(false)}>Done for you</Link>
             <Link href="/contact" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Contact Us</Link>
             <div className="flex flex-col gap-2 pt-2">
               <Link href="/auth/login" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-center")}>
