@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
-import { AI_EMPLOYEES, DEPARTMENTS, canAccessEmployee, getPlanById, type Department } from "@/lib/products"
+import {
+  AI_EMPLOYEES,
+  DEPARTMENTS,
+  getPlanById,
+  hasAccessToEmployee,
+  type Department,
+} from "@/lib/products"
 import { EmployeeCard } from "@/components/dashboard/employee-card"
 import { Heart, TrendingUp, Briefcase, Scale, Palette, Crown } from "lucide-react"
 
@@ -26,6 +32,16 @@ export default async function EmployeesPage() {
     .from("ai_employees")
     .select("*")
     .eq("user_id", user?.id)
+
+  let alaUnlockedIds: string[] = []
+  if (user?.id) {
+    const { data: alaSubs } = await supabase
+      .from("a_la_carte_subscriptions")
+      .select("employee_id")
+      .eq("user_id", user.id)
+      .in("status", ["active", "trialing"])
+    alaUnlockedIds = alaSubs?.map((r) => r.employee_id) ?? []
+  }
 
   const tier = profile?.subscription_tier || "personal"
   const currentPlan = getPlanById(tier)
@@ -63,15 +79,19 @@ export default async function EmployeesPage() {
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {department.employees.map((employee) => {
-              const userEmployee = userEmployees?.find(e => e.name === employee.name)
-              const isLocked = !canAccessEmployee(tier, employee.tier_required)
+              const userEmployee = userEmployees?.find((e) => e.name === employee.name)
+              const hasAccess = hasAccessToEmployee(tier, employee, alaUnlockedIds)
+              const unlockedViaAlaCarte =
+                Boolean(employee.isALaCarte) && alaUnlockedIds.includes(employee.id)
 
               return (
                 <EmployeeCard
                   key={employee.id}
                   employee={employee}
                   userEmployee={userEmployee}
-                  isLocked={isLocked}
+                  hasAccess={hasAccess}
+                  userTier={tier}
+                  unlockedViaAlaCarte={unlockedViaAlaCarte}
                   userId={user?.id || ""}
                 />
               )

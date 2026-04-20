@@ -156,7 +156,7 @@ export function Pricing() {
 
         {/* A la carte note */}
         <p className="mt-8 text-center text-sm text-muted-foreground">
-          Need a specific bot? Add premium AI employees a la carte starting at $14.99/month
+          Need a specific bot? Add premium AI employees à la carte at $9.99/month each (Personal &amp; Entrepreneur)
         </p>
       </div>
     </section>

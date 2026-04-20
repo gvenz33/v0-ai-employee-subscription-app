@@ -185,6 +185,14 @@ export function canAccessEmployee(userTier: string, requiredTier: string): boole
   return TIER_ORDER.indexOf(userTier) >= TIER_ORDER.indexOf(requiredTier)
 }
 
+/** Monthly à la carte price (Terms & FAQ): $9.99 per premium agent on eligible plans */
+export const A_LA_CARTE_MONTHLY_PRICE_CENTS = 999
+
+/** Only Personal & Entrepreneur may purchase à la carte premium agents (Terms). */
+export function tierMayPurchaseAlaCarte(userTier: string): boolean {
+  return userTier === "personal" || userTier === "entrepreneur"
+}
+
 export function getTierIndex(tier: string): number {
   return TIER_ORDER.indexOf(tier)
 }
@@ -209,6 +217,29 @@ export interface AIEmployee {
   icon: string
   isALaCarte?: boolean // Can be purchased individually
   aLaCartePriceInCents?: number
+}
+
+/**
+ * Access via plan tier OR active à la carte subscription (Personal/Entrepreneur only for à la carte).
+ */
+export function hasAccessToEmployee(
+  userTier: string,
+  employee: AIEmployee,
+  alaCarteUnlockedEmployeeIds: string[],
+): boolean {
+  if (canAccessEmployee(userTier, employee.tier_required)) return true
+  if (
+    employee.isALaCarte &&
+    tierMayPurchaseAlaCarte(userTier) &&
+    alaCarteUnlockedEmployeeIds.includes(employee.id)
+  ) {
+    return true
+  }
+  return false
+}
+
+export function getALaCarteMonthlyPriceInCents(_employee: AIEmployee): number {
+  return A_LA_CARTE_MONTHLY_PRICE_CENTS
 }
 
 // ============================================
@@ -583,7 +614,7 @@ const premiumAgents: AIEmployee[] = [
     department: "premium",
     icon: "Rocket",
     isALaCarte: true,
-    aLaCartePriceInCents: 1999, // $19.99/month
+    aLaCartePriceInCents: A_LA_CARTE_MONTHLY_PRICE_CENTS,
   },
   {
     id: "product-advisor",
@@ -595,7 +626,7 @@ const premiumAgents: AIEmployee[] = [
     department: "premium",
     icon: "Lightbulb",
     isALaCarte: true,
-    aLaCartePriceInCents: 1999,
+    aLaCartePriceInCents: A_LA_CARTE_MONTHLY_PRICE_CENTS,
   },
   {
     id: "real-estate-analyzer",
@@ -607,7 +638,7 @@ const premiumAgents: AIEmployee[] = [
     department: "premium",
     icon: "Building",
     isALaCarte: true,
-    aLaCartePriceInCents: 2499, // $24.99/month
+    aLaCartePriceInCents: A_LA_CARTE_MONTHLY_PRICE_CENTS,
   },
   {
     id: "podcast-producer",
@@ -619,7 +650,7 @@ const premiumAgents: AIEmployee[] = [
     department: "premium",
     icon: "Mic",
     isALaCarte: true,
-    aLaCartePriceInCents: 1499, // $14.99/month
+    aLaCartePriceInCents: A_LA_CARTE_MONTHLY_PRICE_CENTS,
   },
   {
     id: "book-writing-assistant",
@@ -631,7 +662,7 @@ const premiumAgents: AIEmployee[] = [
     department: "premium",
     icon: "BookOpen",
     isALaCarte: true,
-    aLaCartePriceInCents: 1999,
+    aLaCartePriceInCents: A_LA_CARTE_MONTHLY_PRICE_CENTS,
   },
   {
     id: "data-analyst",
@@ -643,7 +674,7 @@ const premiumAgents: AIEmployee[] = [
     department: "premium",
     icon: "BarChart3",
     isALaCarte: true,
-    aLaCartePriceInCents: 1999,
+    aLaCartePriceInCents: A_LA_CARTE_MONTHLY_PRICE_CENTS,
   },
 ]
 
@@ -746,6 +777,6 @@ export function getALaCarteBotById(botId: string): BotPurchase | undefined {
   return {
     id: employee.id,
     name: employee.name,
-    priceInCents: employee.aLaCartePriceInCents || 999,
+    priceInCents: employee.aLaCartePriceInCents ?? A_LA_CARTE_MONTHLY_PRICE_CENTS,
   }
 }

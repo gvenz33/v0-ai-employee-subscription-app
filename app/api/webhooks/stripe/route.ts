@@ -33,6 +33,8 @@ export async function POST(req: Request) {
       const userId = session.metadata?.user_id
       const planId = session.metadata?.plan_id
       const isTokenPack = session.metadata?.type === 'token_pack'
+      const isAlaCarte = session.metadata?.type === 'ala_carte_employee'
+      const alaCarteEmployeeId = session.metadata?.employee_id
       const tasksToAdd = parseInt(session.metadata?.tasks_to_add || '0', 10)
 
       if (userId && isTokenPack && tasksToAdd > 0) {
@@ -64,6 +66,30 @@ export async function POST(req: Request) {
               description: `Token Pack: +${tasksToAdd} tasks`
             })
         }
+      } else if (
+        userId &&
+        isAlaCarte &&
+        alaCarteEmployeeId &&
+        session.subscription
+      ) {
+        const stripeSubId = session.subscription as string
+        const { data: alaExisting } = await getSupabaseAdmin()
+          .from('a_la_carte_subscriptions')
+          .select('id')
+          .eq('stripe_subscription_id', stripeSubId)
+          .maybeSingle()
+
+        if (!alaExisting) {
+          await getSupabaseAdmin()
+            .from('a_la_carte_subscriptions')
+            .insert({
+              user_id: userId,
+              employee_id: alaCarteEmployeeId,
+              stripe_subscription_id: stripeSubId,
+              status: 'active',
+              updated_at: new Date().toISOString(),
+            })
+        }
       } else if (userId && planId) {
         // Handle subscription checkout (planId must match PLANS ids: personal, entrepreneur, business, enterprise)
         await getSupabaseAdmin()
@@ -82,15 +108,32 @@ export async function POST(req: Request) {
     case 'customer.subscription.updated': {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
+      const subId = subscription.id
 
-      // Find user by customer ID
+      const { data: alaRow } = await getSupabaseAdmin()
+        .from('a_la_carte_subscriptions')
+        .select('id')
+        .eq('stripe_subscription_id', subId)
+        .maybeSingle()
+
+      if (alaRow) {
+        await getSupabaseAdmin()
+          .from('a_la_carte_subscriptions')
+          .update({
+            status: subscription.status,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_subscription_id', subId)
+        break
+      }
+
       const { data: profile } = await getSupabaseAdmin()
         .from('profiles')
-        .select('id')
+        .select('id, stripe_subscription_id')
         .eq('stripe_customer_id', customerId)
         .single()
 
-      if (profile) {
+      if (profile?.stripe_subscription_id === subId) {
         const price = subscription.items.data[0]?.price
         const unitAmount = price?.unit_amount ?? 0
         const interval = price?.recurring?.interval === 'year' ? 'year' : 'month'
@@ -112,8 +155,22 @@ export async function POST(req: Request) {
     case 'customer.subscription.deleted': {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
+      const subId = subscription.id
 
-      // Find user by customer ID and downgrade to free
+      const { data: alaRow } = await getSupabaseAdmin()
+        .from('a_la_carte_subscriptions')
+        .select('id')
+        .eq('stripe_subscription_id', subId)
+        .maybeSingle()
+
+      if (alaRow) {
+        await getSupabaseAdmin()
+          .from('a_la_carte_subscriptions')
+          .delete()
+          .eq('stripe_subscription_id', subId)
+        break
+      }
+
       const { data: profile } = await getSupabaseAdmin()
         .from('profiles')
         .select('id')
@@ -138,16 +195,17 @@ export async function POST(req: Request) {
     case 'invoice.paid': {
       const invoice = event.data.object as Stripe.Invoice
       const customerId = invoice.customer as string
+      const invoiceSub = invoice.subscription
+      const subscriptionId =
+        typeof invoiceSub === 'string' ? invoiceSub : invoiceSub?.id ?? null
 
-      // Find user by customer ID
       const { data: profile } = await getSupabaseAdmin()
         .from('profiles')
-        .select('id')
+        .select('id, stripe_subscription_id')
         .eq('stripe_customer_id', customerId)
         .single()
 
       if (profile) {
-        // Store invoice record
         await getSupabaseAdmin()
           .from('invoices')
           .insert({
@@ -162,11 +220,13 @@ export async function POST(req: Request) {
             period_end: invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : null
           })
 
-        // Reset monthly task usage on successful payment
-        await getSupabaseAdmin()
-          .from('profiles')
-          .update({ tasks_used: 0 })
-          .eq('id', profile.id)
+        // Reset monthly task usage only for the main plan subscription (not à la carte add-ons)
+        if (subscriptionId && profile.stripe_subscription_id === subscriptionId) {
+          await getSupabaseAdmin()
+            .from('profiles')
+            .update({ tasks_used: 0 })
+            .eq('id', profile.id)
+        }
       }
       break
     }

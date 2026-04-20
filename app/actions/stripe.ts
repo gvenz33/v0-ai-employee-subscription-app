@@ -2,7 +2,16 @@
 
 import { getStripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
-import { PLANS, getPriceInCents, TOKEN_PACKS, getTokenPackById } from '@/lib/products'
+import {
+  PLANS,
+  getPriceInCents,
+  TOKEN_PACKS,
+  getTokenPackById,
+  getEmployeeById,
+  A_LA_CARTE_MONTHLY_PRICE_CENTS,
+  tierMayPurchaseAlaCarte,
+  canAccessEmployee,
+} from '@/lib/products'
 
 export async function createCheckoutSession(planId: string, interval: 'month' | 'year' = 'month') {
   const supabase = await createClient()
@@ -77,6 +86,105 @@ export async function createCheckoutSession(planId: string, interval: 'month' | 
     },
     ui_mode: 'embedded',
     return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/billing?session_id={CHECKOUT_SESSION_ID}`
+  })
+
+  return { clientSecret: session.client_secret }
+}
+
+/**
+ * Stripe subscription for one premium AI Employee (à la carte). Personal & Entrepreneur only; see Terms.
+ */
+export async function createAlaCarteCheckoutSession(employeeId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error('You must be logged in to subscribe')
+  }
+
+  const employee = getEmployeeById(employeeId)
+  if (!employee?.isALaCarte) {
+    throw new Error('This AI employee is not available à la carte')
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('stripe_customer_id, subscription_tier')
+    .eq('id', user.id)
+    .single()
+
+  const tier = profile?.subscription_tier ?? 'personal'
+
+  if (canAccessEmployee(tier, employee.tier_required)) {
+    throw new Error('This AI employee is already included in your plan')
+  }
+
+  if (!tierMayPurchaseAlaCarte(tier)) {
+    throw new Error(
+      'À la carte add-ons are available on Personal and Entrepreneur plans only. Upgrade or change your base plan to use this option.'
+    )
+  }
+
+  const { data: existing } = await supabase
+    .from('a_la_carte_subscriptions')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('employee_id', employeeId)
+    .in('status', ['active', 'trialing'])
+    .maybeSingle()
+
+  if (existing) {
+    throw new Error('You already have an active à la carte subscription for this AI employee')
+  }
+
+  let customerId = profile?.stripe_customer_id
+
+  if (!customerId) {
+    const customer = await getStripe().customers.create({
+      email: user.email,
+      metadata: {
+        supabase_user_id: user.id,
+      },
+    })
+    customerId = customer.id
+
+    await supabase
+      .from('profiles')
+      .update({ stripe_customer_id: customerId })
+      .eq('id', user.id)
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+  const session = await getStripe().checkout.sessions.create({
+    customer: customerId,
+    mode: 'subscription',
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `À la carte: ${employee.name}`,
+            description: `Monthly access to ${employee.name} without upgrading your full plan`,
+          },
+          unit_amount: A_LA_CARTE_MONTHLY_PRICE_CENTS,
+          recurring: {
+            interval: 'month',
+          },
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: `${appUrl}/dashboard/employees?ala_carte_success=1`,
+    cancel_url: `${appUrl}/dashboard/employees?ala_carte_canceled=1`,
+    metadata: {
+      user_id: user.id,
+      type: 'ala_carte_employee',
+      employee_id: employeeId,
+    },
+    ui_mode: 'embedded',
+    return_url: `${appUrl}/dashboard/employees?session_id={CHECKOUT_SESSION_ID}`,
   })
 
   return { clientSecret: session.client_secret }

@@ -1,6 +1,6 @@
 import { streamText, convertToModelMessages } from 'ai'
 import { createClient } from '@/lib/supabase/server'
-import { canAccessEmployee, getEmployeeById } from '@/lib/products'
+import { getEmployeeById, hasAccessToEmployee } from '@/lib/products'
 import { validateApiKey, logApiRequest } from '@/lib/api-auth'
 
 export async function POST(req: Request) {
@@ -63,11 +63,21 @@ export async function POST(req: Request) {
   }
 
   const userTier = profile.subscription_tier || 'personal'
-  
-  // Check if user has access to this employee based on tier
-  if (!canAccessEmployee(userTier, employee.tier_required)) {
+
+  const { data: alaSubs } = await supabase
+    .from('a_la_carte_subscriptions')
+    .select('employee_id')
+    .eq('user_id', userId)
+    .in('status', ['active', 'trialing'])
+
+  const alaUnlocked = alaSubs?.map((r) => r.employee_id) ?? []
+
+  if (!hasAccessToEmployee(userTier, employee, alaUnlocked)) {
     if (apiKeyId) await logApiRequest(apiKeyId, userId, '/api/chat', 'POST', 403, Date.now() - startTime, req)
-    return new Response(`This AI employee requires ${employee.tier_required} tier`, { status: 403 })
+    return new Response(
+      `This AI employee requires a higher plan or an à la carte subscription`,
+      { status: 403 },
+    )
   }
 
   // Check task limits

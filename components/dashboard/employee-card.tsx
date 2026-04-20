@@ -8,9 +8,9 @@ import { Switch } from "@/components/ui/switch"
 import { Lock, MessageSquare, ShoppingCart, Heart, Wallet, UtensilsCrossed, Plane, GraduationCap, Activity, Baby, Share2, PenTool, Search, RefreshCw, Megaphone, Target, Presentation, Settings, Headphones, TrendingUp, Users, Calendar, Clipboard, FileText, Briefcase, Calculator, FileSignature, Receipt, ShieldCheck, Handshake, Palette, Globe, Workflow, Rocket, Lightbulb, Building, Mic, BookOpen, BarChart3, Microscope, Code2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import type { AIEmployee } from "@/lib/products"
+import { type AIEmployee, tierMayPurchaseAlaCarte, A_LA_CARTE_MONTHLY_PRICE_CENTS } from "@/lib/products"
+import { AlaCarteCheckout } from "@/components/dashboard/ala-carte-checkout"
 
-// Map icon names to components
 const iconMap: Record<string, React.ReactNode> = {
   Heart: <Heart className="h-5 w-5" />,
   Wallet: <Wallet className="h-5 w-5" />,
@@ -68,14 +68,30 @@ interface UserEmployee {
 interface EmployeeCardProps {
   employee: AIEmployee
   userEmployee?: UserEmployee
-  isLocked: boolean
+  hasAccess: boolean
+  userTier: string
+  unlockedViaAlaCarte: boolean
   userId: string
 }
 
-export function EmployeeCard({ employee, userEmployee, isLocked, userId }: EmployeeCardProps) {
+export function EmployeeCard({
+  employee,
+  userEmployee,
+  hasAccess,
+  userTier,
+  unlockedViaAlaCarte,
+  userId,
+}: EmployeeCardProps) {
   const [isActive, setIsActive] = useState(userEmployee?.is_active || false)
   const [isLoading, setIsLoading] = useState(false)
+  const [showAlaCarteCheckout, setShowAlaCarteCheckout] = useState(false)
   const router = useRouter()
+
+  const isLocked = !hasAccess
+  const showAlaCarteCta =
+    isLocked && employee.isALaCarte && tierMayPurchaseAlaCarte(userTier)
+  const showAlaCarteIneligible =
+    isLocked && employee.isALaCarte && !tierMayPurchaseAlaCarte(userTier)
 
   const handleToggle = async () => {
     if (isLocked) return
@@ -85,23 +101,18 @@ export function EmployeeCard({ employee, userEmployee, isLocked, userId }: Emplo
 
     try {
       if (userEmployee) {
-        await supabase
-          .from("ai_employees")
-          .update({ is_active: !isActive })
-          .eq("id", userEmployee.id)
+        await supabase.from("ai_employees").update({ is_active: !isActive }).eq("id", userEmployee.id)
       } else {
-        await supabase
-          .from("ai_employees")
-          .insert({
-            user_id: userId,
-            name: employee.name,
-            role: employee.role,
-            description: employee.description,
-            tier_required: employee.tier_required,
-            is_active: true,
-          })
+        await supabase.from("ai_employees").insert({
+          user_id: userId,
+          name: employee.name,
+          role: employee.role,
+          description: employee.description,
+          tier_required: employee.tier_required,
+          is_active: true,
+        })
       }
-      
+
       setIsActive(!isActive)
       router.refresh()
     } catch (error) {
@@ -116,71 +127,102 @@ export function EmployeeCard({ employee, userEmployee, isLocked, userId }: Emplo
   }
 
   return (
-    <Card className={`bg-card border-border relative transition-all hover:border-primary/30 ${isLocked ? "opacity-60" : ""}`}>
-      {isLocked && (
-        <div className="absolute top-2 right-2 z-10">
-          <Badge variant="outline" className="gap-1 bg-background/80 backdrop-blur-sm text-xs">
-            <Lock className="h-3 w-3" />
-            {tierLabels[employee.tier_required] || employee.tier_required}
-          </Badge>
-        </div>
-      )}
-
-      {employee.isALaCarte && isLocked && (
-        <div className="absolute top-2 left-2 z-10">
-          <Badge className="gap-1 bg-primary text-xs">
-            <ShoppingCart className="h-3 w-3" />
-            ${(employee.aLaCartePriceInCents || 999) / 100}/mo
-          </Badge>
-        </div>
-      )}
-      
-      <CardHeader className="pb-2 pt-4">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-            {iconMap[employee.icon] || <Users className="h-5 w-5" />}
+    <>
+      <Card
+        className={`relative border-border bg-card transition-all hover:border-primary/30 ${isLocked ? "opacity-60" : ""}`}
+      >
+        {isLocked && (
+          <div className="absolute right-2 top-2 z-10">
+            <Badge variant="outline" className="gap-1 bg-background/80 text-xs backdrop-blur-sm">
+              <Lock className="h-3 w-3" />
+              {tierLabels[employee.tier_required] || employee.tier_required}
+            </Badge>
           </div>
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-foreground text-sm truncate">{employee.name}</CardTitle>
-            <CardDescription className="text-muted-foreground text-xs">{employee.role}</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-3 pt-0">
-        <p className="text-xs text-muted-foreground line-clamp-2">{employee.description}</p>
-
-        {userEmployee && (
-          <p className="text-xs text-muted-foreground">
-            {userEmployee.tasks_completed} tasks completed
-          </p>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t border-border">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={isActive}
-              onCheckedChange={handleToggle}
-              disabled={isLocked || isLoading}
-              className="scale-75"
-            />
-            <span className="text-xs text-muted-foreground">
-              {isActive ? "Active" : "Inactive"}
-            </span>
+        {employee.isALaCarte && isLocked && (
+          <div className="absolute left-2 top-2 z-10">
+            <Badge className="gap-1 bg-primary text-xs">
+              <ShoppingCart className="h-3 w-3" />${A_LA_CARTE_MONTHLY_PRICE_CENTS / 100}/mo
+            </Badge>
           </div>
-          
-          <Button
-            size="sm"
-            variant={isActive ? "default" : "outline"}
-            disabled={isLocked || !isActive}
-            onClick={handleChat}
-            className="h-7 text-xs"
-          >
-            <MessageSquare className="h-3 w-3 mr-1" />
-            Chat
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        )}
+
+        {unlockedViaAlaCarte && hasAccess && (
+          <div className="absolute left-2 top-2 z-10">
+            <Badge variant="secondary" className="text-xs">
+              À la carte
+            </Badge>
+          </div>
+        )}
+
+        <CardHeader className="pb-2 pt-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              {iconMap[employee.icon] || <Users className="h-5 w-5" />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <CardTitle className="truncate text-sm text-foreground">{employee.name}</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">{employee.role}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-3 pt-0">
+          <p className="line-clamp-2 text-xs text-muted-foreground">{employee.description}</p>
+
+          {userEmployee && (
+            <p className="text-xs text-muted-foreground">{userEmployee.tasks_completed} tasks completed</p>
+          )}
+
+          {showAlaCarteCta && (
+            <Button className="w-full text-xs" size="sm" type="button" onClick={() => setShowAlaCarteCheckout(true)}>
+              Subscribe ${(A_LA_CARTE_MONTHLY_PRICE_CENTS / 100).toFixed(2)}/mo
+            </Button>
+          )}
+
+          {showAlaCarteIneligible && (
+            <p className="text-xs text-muted-foreground">
+              À la carte add-ons are for Personal &amp; Entrepreneur plans. Upgrade your base plan or choose Enterprise
+              for full access.
+            </p>
+          )}
+
+          <div className="flex items-center justify-between border-t border-border pt-2">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={isActive}
+                onCheckedChange={handleToggle}
+                disabled={isLocked || isLoading}
+                className="scale-75"
+              />
+              <span className="text-xs text-muted-foreground">{isActive ? "Active" : "Inactive"}</span>
+            </div>
+
+            <Button
+              size="sm"
+              variant={isActive ? "default" : "outline"}
+              disabled={isLocked || !isActive}
+              onClick={handleChat}
+              className="h-7 text-xs"
+            >
+              <MessageSquare className="mr-1 h-3 w-3" />
+              Chat
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {showAlaCarteCheckout && (
+        <AlaCarteCheckout
+          employeeId={employee.id}
+          employeeName={employee.name}
+          onClose={() => {
+            setShowAlaCarteCheckout(false)
+            router.refresh()
+          }}
+        />
+      )}
+    </>
   )
 }
