@@ -45,7 +45,7 @@ IMPORTANT INFORMATION:
 - Admin email for escalation: gvenz33@gmail.com
 
 PRICING TIERS:
-- Personal: $19/month - 5 AI employees, 50 tasks/month
+- Personal: $29/month - 5 AI employees, 50 tasks/month
 - Entrepreneur: $49/month - 10 AI employees, 200 tasks/month  
 - Business: $99/month - 20 AI employees, 1,000 tasks/month
 - Enterprise: $199/month - All 30 AI employees, effectively unlimited tasks

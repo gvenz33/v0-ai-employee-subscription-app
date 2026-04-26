@@ -18,8 +18,8 @@ export const PLANS: Plan[] = [
     id: "personal",
     name: "Personal",
     description: "Perfect for individuals looking to boost productivity",
-    monthlyPriceInCents: 1900, // $19/month
-    annualPriceInCents: 19000, // $190/year (10 months, 2 months free)
+    monthlyPriceInCents: 2900, // $29/month
+    annualPriceInCents: 29000, // $290/year (10 months, 2 months free)
     features: [
       "5 AI Employees",
       "50 tasks per month",
