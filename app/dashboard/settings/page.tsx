@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
+import { Textarea } from "@/components/ui/textarea"
 import { User, Bell, Shield, Key, Save, Loader2 } from "lucide-react"
 import { AutomationEmailSetupCard } from "@/components/dashboard/automation-email-setup-card"
 import { createClient } from "@/lib/supabase/client"
@@ -15,10 +16,42 @@ import { toast } from "sonner"
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingWhiteLabel, setSavingWhiteLabel] = useState(false)
+  const [submittingSla, setSubmittingSla] = useState(false)
+  const [subscriptionTier, setSubscriptionTier] = useState("personal")
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
     api_key: ""
+  })
+  const [whiteLabel, setWhiteLabel] = useState({
+    enabled: false,
+    brand_name: "",
+    logo_url: "",
+    support_email: "",
+    primary_color: "",
+    remove_247_branding: false,
+  })
+  const [slaTargets, setSlaTargets] = useState({
+    uptime_percent: 99.9,
+    urgent_first_response_hours: 4,
+    standard_first_response_business_hours: 24,
+  })
+  const [slaTickets, setSlaTickets] = useState<
+    Array<{
+      id: string
+      title: string
+      description: string
+      severity: "standard" | "urgent" | "critical"
+      status: "open" | "acknowledged" | "resolved"
+      responded_at: string | null
+      created_at: string
+    }>
+  >([])
+  const [slaForm, setSlaForm] = useState({
+    title: "",
+    description: "",
+    severity: "standard" as "standard" | "urgent" | "critical",
   })
   const [notifications, setNotifications] = useState({
     email_updates: true,
@@ -39,11 +72,39 @@ export default function SettingsPage() {
           .single()
 
         if (data) {
+          setSubscriptionTier(data.subscription_tier || "personal")
           setProfile({
             full_name: data.full_name || "",
             email: user.email || "",
             api_key: data.api_key || ""
           })
+
+          if (data.subscription_tier === "enterprise") {
+            const [whiteLabelRes, slaRes] = await Promise.all([
+              fetch("/api/user/white-label", { cache: "no-store" }),
+              fetch("/api/user/sla", { cache: "no-store" }),
+            ])
+
+            if (whiteLabelRes.ok) {
+              const whiteLabelData = await whiteLabelRes.json()
+              if (whiteLabelData?.settings) {
+                setWhiteLabel({
+                  enabled: Boolean(whiteLabelData.settings.enabled),
+                  brand_name: whiteLabelData.settings.brand_name || "",
+                  logo_url: whiteLabelData.settings.logo_url || "",
+                  support_email: whiteLabelData.settings.support_email || "",
+                  primary_color: whiteLabelData.settings.primary_color || "",
+                  remove_247_branding: Boolean(whiteLabelData.settings.remove_247_branding),
+                })
+              }
+            }
+
+            if (slaRes.ok) {
+              const slaData = await slaRes.json()
+              if (slaData?.targets) setSlaTargets(slaData.targets)
+              if (Array.isArray(slaData?.tickets)) setSlaTickets(slaData.tickets)
+            }
+          }
         }
       }
       setLoading(false)
@@ -110,6 +171,57 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleSaveWhiteLabel() {
+    setSavingWhiteLabel(true)
+    try {
+      const res = await fetch("/api/user/white-label", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(whiteLabel),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Failed to save white-label settings")
+      } else {
+        toast.success("White-label settings saved")
+      }
+    } catch {
+      toast.error("Failed to save white-label settings")
+    } finally {
+      setSavingWhiteLabel(false)
+    }
+  }
+
+  async function handleCreateSlaTicket() {
+    if (!slaForm.title.trim() || !slaForm.description.trim()) {
+      toast.error("Please add a title and description for your SLA request")
+      return
+    }
+
+    setSubmittingSla(true)
+    try {
+      const res = await fetch("/api/user/sla", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(slaForm),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Failed to create SLA ticket")
+      } else {
+        toast.success("SLA ticket submitted")
+        if (data.ticket) {
+          setSlaTickets((prev) => [data.ticket, ...prev])
+        }
+        setSlaForm({ title: "", description: "", severity: "standard" })
+      }
+    } catch {
+      toast.error("Failed to create SLA ticket")
+    } finally {
+      setSubmittingSla(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -160,6 +272,173 @@ export default function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {subscriptionTier === "enterprise" && (
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle>White Label Options</CardTitle>
+            <CardDescription>
+              Configure custom branding for your Founders tier workspace and integrations.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-foreground">Enable white-label mode</p>
+                <p className="text-sm text-muted-foreground">Use your brand identity in customer-facing outputs.</p>
+              </div>
+              <Switch
+                checked={whiteLabel.enabled}
+                onCheckedChange={(checked) => setWhiteLabel((prev) => ({ ...prev, enabled: checked }))}
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="wlBrandName">Brand Name</Label>
+                <Input
+                  id="wlBrandName"
+                  value={whiteLabel.brand_name}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, brand_name: e.target.value }))}
+                  placeholder="Your company name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wlSupportEmail">Support Email</Label>
+                <Input
+                  id="wlSupportEmail"
+                  value={whiteLabel.support_email}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, support_email: e.target.value }))}
+                  placeholder="support@yourdomain.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wlLogoUrl">Logo URL</Label>
+                <Input
+                  id="wlLogoUrl"
+                  value={whiteLabel.logo_url}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, logo_url: e.target.value }))}
+                  placeholder="https://yourdomain.com/logo.png"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wlPrimaryColor">Primary Color</Label>
+                <Input
+                  id="wlPrimaryColor"
+                  value={whiteLabel.primary_color}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, primary_color: e.target.value }))}
+                  placeholder="#4f46e5"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-foreground">Remove 247 branding</p>
+                <p className="text-sm text-muted-foreground">Hide 247 AI Employees branding where white-label is applied.</p>
+              </div>
+              <Switch
+                checked={whiteLabel.remove_247_branding}
+                onCheckedChange={(checked) =>
+                  setWhiteLabel((prev) => ({ ...prev, remove_247_branding: checked }))
+                }
+              />
+            </div>
+
+            <Button onClick={handleSaveWhiteLabel} disabled={savingWhiteLabel}>
+              {savingWhiteLabel ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Save White Label Settings
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {subscriptionTier === "enterprise" && (
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle>SLA Guarantee</CardTitle>
+            <CardDescription>
+              Founders tier SLA: {slaTargets.uptime_percent}% uptime target, urgent first response in{" "}
+              {slaTargets.urgent_first_response_hours} hours.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-md border border-border p-3 text-sm text-muted-foreground">
+              Standard requests target first response within {slaTargets.standard_first_response_business_hours} business hours.
+            </div>
+
+            <div className="grid gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="slaTitle">Report issue</Label>
+                <Input
+                  id="slaTitle"
+                  value={slaForm.title}
+                  onChange={(e) => setSlaForm((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="Service interruption, production issue, or urgent support request"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="slaSeverity">Severity</Label>
+                <select
+                  id="slaSeverity"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={slaForm.severity}
+                  onChange={(e) =>
+                    setSlaForm((prev) => ({
+                      ...prev,
+                      severity: e.target.value as "standard" | "urgent" | "critical",
+                    }))
+                  }
+                >
+                  <option value="standard">Standard</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="slaDescription">Description</Label>
+                <Textarea
+                  id="slaDescription"
+                  value={slaForm.description}
+                  onChange={(e) => setSlaForm((prev) => ({ ...prev, description: e.target.value }))}
+                  rows={4}
+                  placeholder="Describe impact, affected workflows, and any timeline details."
+                />
+              </div>
+
+              <Button onClick={handleCreateSlaTicket} disabled={submittingSla}>
+                {submittingSla ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Submit SLA Ticket
+              </Button>
+            </div>
+
+            <Separator />
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-foreground">Recent SLA tickets</p>
+              {slaTickets.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No SLA tickets submitted yet.</p>
+              ) : (
+                slaTickets.slice(0, 5).map((ticket) => (
+                  <div key={ticket.id} className="rounded-md border border-border p-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm font-medium text-foreground">{ticket.title}</p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                        {ticket.severity} · {ticket.status}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">{ticket.description}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Created {new Date(ticket.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="bg-card border-border">
         <CardHeader>

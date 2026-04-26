@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { AI_EMPLOYEES } from "@/lib/products"
+import { AI_EMPLOYEES, canAccessEmployee } from "@/lib/products"
 import { generateText } from "ai"
 import { NextRequest } from "next/server"
 
@@ -56,14 +56,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check tier access
-    const tierOrder = { starter: 1, pro: 2, enterprise: 3 }
-    const userTierLevel = tierOrder[profile.subscription_tier as keyof typeof tierOrder] || 0
-    const requiredTierLevel = tierOrder[employee.tierRequired as keyof typeof tierOrder] || 0
-
-    if (userTierLevel < requiredTierLevel) {
+    // Check tier access against current catalog tiers (personal/entrepreneur/business/enterprise)
+    const userTier = profile.subscription_tier || "personal"
+    if (!canAccessEmployee(userTier, employee.tier_required)) {
       return Response.json(
-        { error: `This AI employee requires ${employee.tierRequired} tier or higher` },
+        { error: `This AI employee requires ${employee.tier_required} tier or higher` },
         { status: 403 }
       )
     }
@@ -205,7 +202,7 @@ export async function GET() {
         id: e.id,
         name: e.name,
         role: e.role,
-        tier_required: e.tierRequired
+        tier_required: e.tier_required
       }))
     }
   })
