@@ -8,12 +8,13 @@ import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function planDisplayName(planId: string, fallback: string) {
-  if (planId === "enterprise") return "Founder's"
+  if (planId === "enterprise") return "Founders"
   return fallback
 }
 
 export function Pricing() {
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month")
+  const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({})
 
   return (
     <section id="pricing" className="scroll-mt-24 px-6 py-24">
@@ -71,6 +72,8 @@ export function Pricing() {
             const price = billingInterval === "year" 
               ? plan.annualPriceInCents 
               : plan.monthlyPriceInCents
+            const hiddenFeatures = plan.features.slice(6)
+            const isExpanded = Boolean(expandedPlans[plan.id])
             
             const displayPrice = billingInterval === "year"
               ? Math.round(price / 12 / 100) // Show monthly equivalent for annual
@@ -132,10 +135,30 @@ export function Pricing() {
                       <span className="text-muted-foreground">{feature}</span>
                     </li>
                   ))}
-                  {plan.features.length > 6 && (
-                    <li className="text-xs text-primary">
-                      +{plan.features.length - 6} more features
-                    </li>
+                  {hiddenFeatures.length > 0 && (
+                    <>
+                      <li>
+                        <button
+                          type="button"
+                          className="text-xs text-primary underline-offset-4 hover:underline"
+                          onClick={() =>
+                            setExpandedPlans((prev) => ({ ...prev, [plan.id]: !prev[plan.id] }))
+                          }
+                          aria-expanded={isExpanded}
+                        >
+                          {isExpanded
+                            ? `Hide ${hiddenFeatures.length} more feature${hiddenFeatures.length > 1 ? "s" : ""}`
+                            : `+${hiddenFeatures.length} more feature${hiddenFeatures.length > 1 ? "s" : ""}`}
+                        </button>
+                      </li>
+                      {isExpanded &&
+                        hiddenFeatures.map((feature) => (
+                          <li key={feature} className="flex items-start gap-2 text-sm">
+                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                            <span className="text-muted-foreground">{feature}</span>
+                          </li>
+                        ))}
+                    </>
                   )}
                 </ul>
 
