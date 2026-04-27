@@ -4,11 +4,13 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Transporter } from "nodemailer"
 import { Resend } from "resend"
 import { getUserAutomationSmtp } from "@/lib/user-automation-email"
+import { getEffectiveWhiteLabelSettings } from "@/lib/white-label"
 
-function platformFromAddress(): string {
+function platformFromAddress(brandName?: string | null): string {
+  const senderName = brandName?.trim() || "247 AI Employees"
   return (
     process.env.AUTOMATION_EMAIL_FROM?.trim() ||
-    "247 AI Employees <hello@247aiemployees.net>"
+    `${senderName} <hello@247aiemployees.net>`
   )
 }
 
@@ -26,9 +28,21 @@ async function sendWithTransport(
     })
     return { ok: true }
   } catch (e) {
+    const raw = e instanceof Error ? e.message : "SMTP send failed"
+    const lower = raw.toLowerCase()
+    if (
+      lower.includes("invalid greeting") &&
+      (lower.includes("imap") || lower.includes("dovecot"))
+    ) {
+      return {
+        ok: false,
+        error:
+          "SMTP settings appear to be using an IMAP server. Use your email provider's SMTP host and port (typically 587 with STARTTLS, or 465 with SSL).",
+      }
+    }
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "SMTP send failed",
+      error: raw,
     }
   } finally {
     transport.close()
@@ -36,11 +50,13 @@ async function sendWithTransport(
 }
 
 async function sendViaResendPlatform(input: {
+  userId: string
+  supabase: SupabaseClient
   to: string
   subject: string
   bodyText: string
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const key = process.env.RESEND_API_KEY
+  const key = process.env.RESEND_API_KEY || process.env.RESEND_API_KEY_247AI
   if (!key) {
     return {
       ok: false,
@@ -49,7 +65,8 @@ async function sendViaResendPlatform(input: {
     }
   }
 
-  const from = platformFromAddress()
+  const whiteLabel = await getEffectiveWhiteLabelSettings(input.supabase, input.userId)
+  const from = platformFromAddress(whiteLabel?.brand_name)
   const resend = new Resend(key)
   const { error } = await resend.emails.send({
     from,

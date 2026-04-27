@@ -5,9 +5,11 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, Users, CreditCard, BarChart3, FileText, Settings, ListTodo, Share2, Shield, Code, Coins, CalendarClock } from "lucide-react"
+import type { WhiteLabelSettings } from "@/lib/white-label"
 
 interface DashboardSidebarProps {
   isAdmin?: boolean
+  whiteLabel?: WhiteLabelSettings | null
 }
 
 const navItems = [
@@ -24,21 +26,30 @@ const navItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
-export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
+export function DashboardSidebar({ isAdmin = false, whiteLabel }: DashboardSidebarProps) {
   const pathname = usePathname()
+  const brandName = whiteLabel?.brand_name?.trim() || "247 AI Employees"
+  const logoUrl = whiteLabel?.logo_url?.trim() || ""
+  const supportEmail = whiteLabel?.support_email?.trim() || "hello@247aiemployees.net"
+  const primaryColor = whiteLabel?.primary_color?.trim() || null
 
   return (
     <aside className="w-64 border-r border-border bg-card hidden lg:flex flex-col">
       <div className="p-6 border-b border-border">
         <Link href="/" className="flex items-center gap-3">
-          <Image
-            src="/images/logo.png"
-            alt="247 AI Employees"
-            width={40}
-            height={40}
-            className="h-10 w-auto"
-          />
-          <span className="text-sm font-display font-bold text-foreground leading-tight">247ai<br/>employees</span>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt={brandName} className="h-10 w-10 rounded object-cover" />
+          ) : (
+            <Image
+              src="/images/logo.png"
+              alt="247 AI Employees"
+              width={40}
+              height={40}
+              className="h-10 w-auto"
+            />
+          )}
+          <span className="text-sm font-display font-bold text-foreground leading-tight">{brandName}</span>
         </Link>
       </div>
       
@@ -52,6 +63,7 @@ export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  style={isActive && primaryColor ? { backgroundColor: primaryColor, color: "#ffffff" } : undefined}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                     isActive
@@ -93,13 +105,14 @@ export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
         <div className="rounded-lg bg-muted p-4">
           <p className="text-sm font-medium text-foreground">Need help?</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Check our docs or contact support
+            Check docs or email support
           </p>
           <Link 
-            href="/contact" 
-            className="text-xs text-primary hover:underline mt-2 inline-block"
+            href={`mailto:${supportEmail}`} 
+            className="text-xs hover:underline mt-2 inline-block"
+            style={primaryColor ? { color: primaryColor } : undefined}
           >
-            Contact Support
+            Contact {supportEmail}
           </Link>
         </div>
       </div>

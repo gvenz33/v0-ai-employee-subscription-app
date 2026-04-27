@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { LogOut, User, Menu } from "lucide-react"
 import { SUBSCRIPTION_PLANS } from "@/lib/products"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import type { WhiteLabelSettings } from "@/lib/white-label"
 
 interface Profile {
   id: string
@@ -28,9 +29,10 @@ interface Profile {
 interface DashboardHeaderProps {
   user: SupabaseUser
   profile: Profile | null
+  whiteLabel?: WhiteLabelSettings | null
 }
 
-export function DashboardHeader({ user, profile }: DashboardHeaderProps) {
+export function DashboardHeader({ user, profile, whiteLabel }: DashboardHeaderProps) {
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -45,12 +47,21 @@ export function DashboardHeader({ user, profile }: DashboardHeaderProps) {
     ? profile.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
     : user.email?.slice(0, 2).toUpperCase() || "U"
 
+  const brandName = whiteLabel?.brand_name?.trim() || "247 AI Employees"
+  const primaryColor = whiteLabel?.primary_color?.trim() || null
+
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" className="lg:hidden">
           <Menu className="h-5 w-5" />
         </Button>
+        <p
+          className="hidden md:block text-sm font-medium text-foreground"
+          style={primaryColor ? { color: primaryColor } : undefined}
+        >
+          {brandName}
+        </p>
         <div className="hidden sm:flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Plan:</span>
           <Badge variant={tier === "enterprise" ? "default" : tier === "pro" ? "secondary" : "outline"}>
