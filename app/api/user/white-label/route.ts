@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getRootDomain, normalizeTenantSlug } from "@/lib/tenancy"
 
 function isEnterpriseTier(tier: string | null | undefined) {
   return tier === "enterprise"
@@ -33,6 +34,12 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to load white-label settings" }, { status: 500 })
   }
 
+  const { data: tenantData } = await supabase
+    .from("tenant_subdomains")
+    .select("slug, host, is_active")
+    .eq("user_id", user.id)
+    .maybeSingle()
+
   return NextResponse.json({
     settings: data || {
       enabled: false,
@@ -42,6 +49,14 @@ export async function GET() {
       primary_color: "",
       remove_247_branding: false,
     },
+    tenant: tenantData
+      ? {
+          slug: tenantData.slug,
+          host: tenantData.host,
+          is_active: tenantData.is_active,
+          url: `https://${tenantData.host}`,
+        }
+      : null,
   })
 }
 
@@ -64,6 +79,14 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json()
+  const requestedSlug = body.tenant_slug ? normalizeTenantSlug(String(body.tenant_slug)) : ""
+  if (requestedSlug && (requestedSlug.length < 3 || requestedSlug.length > 63)) {
+    return NextResponse.json(
+      { error: "Tenant slug must be between 3 and 63 characters." },
+      { status: 400 }
+    )
+  }
+
   const row = {
     user_id: user.id,
     enabled: Boolean(body.enabled),
@@ -89,6 +112,38 @@ export async function PUT(request: Request) {
     )
   }
 
-  return NextResponse.json({ ok: true })
+  if (requestedSlug) {
+    const host = `${requestedSlug}.${getRootDomain()}`
+    const { error: tenantError } = await supabase
+      .from("tenant_subdomains")
+      .upsert(
+        {
+          user_id: user.id,
+          slug: requestedSlug,
+          host,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      )
+
+    if (tenantError) {
+      if (tenantError.code === "23505") {
+        return NextResponse.json(
+          { error: "That tenant slug is already in use. Please choose another." },
+          { status: 409 }
+        )
+      }
+      return NextResponse.json(
+        {
+          error:
+            "Failed to save tenant subdomain. Ensure scripts/006_tenant_routing_subdomains.sql has been run.",
+        },
+        { status: 500 }
+      )
+    }
+  }
+
+  return NextResponse.json({ ok: true, tenant_host: requestedSlug ? `${requestedSlug}.${getRootDomain()}` : null })
 }
 

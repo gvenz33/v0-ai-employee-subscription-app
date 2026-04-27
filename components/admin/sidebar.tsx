@@ -13,7 +13,8 @@ import {
   Bot,
   Share2,
   Shield,
-  BookOpen
+  BookOpen,
+  Globe
 } from "lucide-react"
 
 interface AdminSidebarProps {
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/admin/users", label: "User Management", icon: Users },
   { href: "/admin/support", label: "Support Chats", icon: MessageSquare },
   { href: "/admin/knowledge-base", label: "Knowledge Base", icon: BookOpen },
+  { href: "/admin/domains", label: "Custom Domains", icon: Globe },
   { href: "/admin/affiliates", label: "Affiliates", icon: Share2 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]

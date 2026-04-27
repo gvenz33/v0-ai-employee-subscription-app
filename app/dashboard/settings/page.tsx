@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { User, Bell, Shield, Key, Save, Loader2 } from "lucide-react"
+import { User, Bell, Shield, Key, Save, Loader2, Globe, RefreshCw } from "lucide-react"
 import { AutomationEmailSetupCard } from "@/components/dashboard/automation-email-setup-card"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -32,6 +32,21 @@ export default function SettingsPage() {
     primary_color: "",
     remove_247_branding: false,
   })
+  const [tenantSlug, setTenantSlug] = useState("")
+  const [tenantUrl, setTenantUrl] = useState("")
+  const [customDomainConfigured, setCustomDomainConfigured] = useState(false)
+  const [customDomainCnameTarget, setCustomDomainCnameTarget] = useState("")
+  const [customDomainDetail, setCustomDomainDetail] = useState<{
+    hostname: string
+    status: string
+    ssl_ready: boolean
+    health_ok: boolean | null
+    last_health_check_at: string | null
+    last_sync_at: string | null
+    is_active: boolean
+  } | null>(null)
+  const [customDomainHostname, setCustomDomainHostname] = useState("")
+  const [customDomainSaving, setCustomDomainSaving] = useState(false)
   const [slaTargets, setSlaTargets] = useState({
     uptime_percent: 99.9,
     urgent_first_response_hours: 4,
@@ -97,12 +112,35 @@ export default function SettingsPage() {
                   remove_247_branding: Boolean(whiteLabelData.settings.remove_247_branding),
                 })
               }
+              if (whiteLabelData?.tenant?.slug) {
+                setTenantSlug(whiteLabelData.tenant.slug)
+                setTenantUrl(whiteLabelData.tenant.url || "")
+              }
             }
 
             if (slaRes.ok) {
               const slaData = await slaRes.json()
               if (slaData?.targets) setSlaTargets(slaData.targets)
               if (Array.isArray(slaData?.tickets)) setSlaTickets(slaData.tickets)
+            }
+
+            const cdRes = await fetch("/api/user/custom-domain", { cache: "no-store" })
+            if (cdRes.ok) {
+              const cdData = await cdRes.json()
+              setCustomDomainConfigured(Boolean(cdData.configured))
+              setCustomDomainCnameTarget(cdData.cname_target_hint || "")
+              if (cdData.domain) {
+                setCustomDomainDetail({
+                  hostname: cdData.domain.hostname,
+                  status: cdData.domain.status,
+                  ssl_ready: cdData.domain.ssl_ready,
+                  health_ok: cdData.domain.health_ok ?? null,
+                  last_health_check_at: cdData.domain.last_health_check_at,
+                  last_sync_at: cdData.domain.last_sync_at,
+                  is_active: cdData.domain.is_active,
+                })
+                setCustomDomainHostname(cdData.domain.hostname)
+              }
             }
           }
         }
@@ -177,18 +215,142 @@ export default function SettingsPage() {
       const res = await fetch("/api/user/white-label", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(whiteLabel),
+        body: JSON.stringify({ ...whiteLabel, tenant_slug: tenantSlug }),
       })
       const data = await res.json()
       if (!res.ok) {
         toast.error(data.error || "Failed to save white-label settings")
       } else {
+        if (data.tenant_host) setTenantUrl(`https://${data.tenant_host}`)
         toast.success("White-label settings saved")
       }
     } catch {
       toast.error("Failed to save white-label settings")
     } finally {
       setSavingWhiteLabel(false)
+    }
+  }
+
+  async function handleSaveCustomDomain() {
+    const host = customDomainHostname.trim().toLowerCase()
+    if (!host) {
+      toast.error("Enter a hostname such as app.yourbrand.com")
+      return
+    }
+    setCustomDomainSaving(true)
+    try {
+      const res = await fetch("/api/user/custom-domain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hostname: host }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Could not save custom domain")
+      } else {
+        toast.success("Custom domain saved — finish DNS at your registrar")
+        const refresh = await fetch("/api/user/custom-domain", { cache: "no-store" })
+        if (refresh.ok) {
+          const cdData = await refresh.json()
+          setCustomDomainConfigured(Boolean(cdData.configured))
+          setCustomDomainCnameTarget(cdData.cname_target_hint || "")
+          if (cdData.domain) {
+            setCustomDomainDetail({
+              hostname: cdData.domain.hostname,
+              status: cdData.domain.status,
+              ssl_ready: cdData.domain.ssl_ready,
+              health_ok: cdData.domain.health_ok ?? null,
+              last_health_check_at: cdData.domain.last_health_check_at,
+              last_sync_at: cdData.domain.last_sync_at,
+              is_active: cdData.domain.is_active,
+            })
+          }
+        }
+      }
+    } catch {
+      toast.error("Could not save custom domain")
+    } finally {
+      setCustomDomainSaving(false)
+    }
+  }
+
+  async function handleRefreshCustomDomain() {
+    setCustomDomainSaving(true)
+    try {
+      const res = await fetch("/api/user/custom-domain", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) })
+      const data = await res.json()
+      if (data.skipped) {
+        toast.message("Vercel sync not configured — status updates when DNS propagates.")
+      } else if (!res.ok) {
+        toast.error(data.error || "Refresh failed")
+      } else {
+        toast.success(`Status refreshed (${data.status ?? "ok"})`)
+        const refresh = await fetch("/api/user/custom-domain", { cache: "no-store" })
+        if (refresh.ok) {
+          const cdData = await refresh.json()
+          if (cdData.domain) {
+            setCustomDomainDetail({
+              hostname: cdData.domain.hostname,
+              status: cdData.domain.status,
+              ssl_ready: cdData.domain.ssl_ready,
+              health_ok: cdData.domain.health_ok ?? null,
+              last_health_check_at: cdData.domain.last_health_check_at,
+              last_sync_at: cdData.domain.last_sync_at,
+              is_active: cdData.domain.is_active,
+            })
+          }
+        }
+      }
+    } catch {
+      toast.error("Refresh failed")
+    } finally {
+      setCustomDomainSaving(false)
+    }
+  }
+
+  async function handleToggleCustomDomain(next: boolean) {
+    setCustomDomainSaving(true)
+    try {
+      const res = await fetch("/api/user/custom-domain", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: next }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Update failed")
+      } else {
+        toast.success(next ? "Custom domain activated" : "Custom domain deactivated")
+        setCustomDomainDetail((prev) =>
+          prev ? { ...prev, is_active: next, status: data.status ?? prev.status } : prev,
+        )
+      }
+    } catch {
+      toast.error("Update failed")
+    } finally {
+      setCustomDomainSaving(false)
+    }
+  }
+
+  async function handleRemoveCustomDomain() {
+    if (!confirm("Remove this custom domain from your account and Vercel? Your tenant subdomain will keep working.")) {
+      return
+    }
+    setCustomDomainSaving(true)
+    try {
+      const res = await fetch("/api/user/custom-domain", { method: "DELETE" })
+      if (!res.ok) {
+        const data = await res.json()
+        toast.error(data.error || "Remove failed")
+      } else {
+        toast.success("Custom domain removed")
+        setCustomDomainDetail(null)
+        setCustomDomainHostname("")
+      }
+    } catch {
+      toast.error("Remove failed")
+    } finally {
+      setCustomDomainSaving(false)
     }
   }
 
@@ -330,6 +492,19 @@ export default function SettingsPage() {
                   placeholder="#4f46e5"
                 />
               </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="wlTenantSlug">Tenant subdomain slug</Label>
+                <Input
+                  id="wlTenantSlug"
+                  value={tenantSlug}
+                  onChange={(e) => setTenantSlug(e.target.value.toLowerCase())}
+                  placeholder="clientname"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your tenant URL will be:{" "}
+                  {tenantUrl || (tenantSlug ? `https://${tenantSlug}.247aiemployees.net` : "https://<slug>.247aiemployees.net")}
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -349,6 +524,107 @@ export default function SettingsPage() {
               {savingWhiteLabel ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
               Save White Label Settings
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {subscriptionTier === "enterprise" && (
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              Custom domain
+            </CardTitle>
+            <CardDescription>
+              Map your own hostname (for example app.client.com) after your tenant subdomain is saved above. Point a{" "}
+              <strong>CNAME</strong> at Vercel&apos;s target; we verify DNS and issue SSL automatically.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!customDomainConfigured && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                Server-side domain registration requires <code className="text-xs">VERCEL_TOKEN</code> and{" "}
+                <code className="text-xs">VERCEL_PROJECT_ID</code> in production. You can still save your hostname for when
+                those are configured.
+              </p>
+            )}
+
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm font-mono">
+              CNAME target: {customDomainCnameTarget || "cname.vercel-dns.com"}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customDomainHost">Hostname</Label>
+              <Input
+                id="customDomainHost"
+                value={customDomainHostname}
+                onChange={(e) => setCustomDomainHostname(e.target.value.toLowerCase())}
+                placeholder="app.yourbrand.com"
+                disabled={customDomainSaving}
+              />
+              <p className="text-xs text-muted-foreground">
+                In your DNS provider, create a CNAME from this hostname to the target above. Propagation can take up to 48
+                hours; use &quot;Refresh status&quot; after DNS is live.
+              </p>
+            </div>
+
+            {customDomainDetail && (
+              <div className="grid gap-2 text-sm rounded-md border border-border p-3">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className="font-medium">{customDomainDetail.status}</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span>SSL: {customDomainDetail.ssl_ready ? "ready" : "pending"}</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span>
+                    HTTPS check:{" "}
+                    {customDomainDetail.health_ok === null
+                      ? "—"
+                      : customDomainDetail.health_ok
+                        ? "OK"
+                        : "unreachable"}
+                  </span>
+                </div>
+                {customDomainDetail.last_sync_at && (
+                  <p className="text-xs text-muted-foreground">
+                    Last sync: {new Date(customDomainDetail.last_sync_at).toLocaleString()}
+                    {customDomainDetail.last_health_check_at && (
+                      <> · Health: {new Date(customDomainDetail.last_health_check_at).toLocaleString()}</>
+                    )}
+                  </p>
+                )}
+                <div className="flex items-center justify-between pt-1">
+                  <div>
+                    <p className="font-medium text-foreground">Serve traffic on this domain</p>
+                    <p className="text-xs text-muted-foreground">Turn off to keep DNS but stop routing to your workspace.</p>
+                  </div>
+                  <Switch
+                    checked={customDomainDetail.is_active}
+                    disabled={customDomainSaving}
+                    onCheckedChange={handleToggleCustomDomain}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={handleSaveCustomDomain}
+                disabled={customDomainSaving || !customDomainHostname.trim()}
+              >
+                {customDomainSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                {customDomainDetail ? "Update domain" : "Save custom domain"}
+              </Button>
+              <Button type="button" variant="outline" onClick={handleRefreshCustomDomain} disabled={customDomainSaving || !customDomainDetail}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh status
+              </Button>
+              {customDomainDetail && (
+                <Button type="button" variant="destructive" onClick={handleRemoveCustomDomain} disabled={customDomainSaving}>
+                  Remove domain
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
