@@ -28,9 +28,16 @@ function applyPreset(
   if (!host) {
     throw new Error("SMTP host is required for custom provider")
   }
+  const lowerHost = host.toLowerCase()
+  const port = custom?.smtp_port ?? 587
+  if (lowerHost.includes("imap") || port === 143 || port === 993) {
+    throw new Error(
+      "This looks like IMAP settings. Use your provider's SMTP host (for example smtp.<provider>.com) and SMTP port (usually 587 with STARTTLS, or 465 with SSL)."
+    )
+  }
   return {
     smtp_host: host,
-    smtp_port: custom?.smtp_port ?? 587,
+    smtp_port: port,
     smtp_secure: custom?.smtp_secure ?? false,
   }
 }

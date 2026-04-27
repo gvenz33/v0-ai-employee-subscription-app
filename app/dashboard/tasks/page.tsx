@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -55,7 +55,11 @@ export default function TasksPage() {
   const [isGeneratingKey, setIsGeneratingKey] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
-  
+  const [taskTitleDictationRoot, setTaskTitleDictationRoot] = useState<HTMLDivElement | null>(null)
+  const [taskPromptDictationRoot, setTaskPromptDictationRoot] = useState<HTMLDivElement | null>(null)
+  const taskTitleSpeechFieldRef = useRef<HTMLInputElement>(null)
+  const taskPromptSpeechFieldRef = useRef<HTMLTextAreaElement>(null)
+
   const { data: tasksData, error, isLoading } = useSWR<{ tasks: Task[] }>("/api/tasks", fetcher, {
     refreshInterval: 5000, // Auto-refresh every 5 seconds
   })
@@ -200,32 +204,38 @@ export default function TasksPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Task Title</label>
-                <div className="flex gap-2 items-center">
+                <div ref={setTaskTitleDictationRoot} className="flex gap-2 items-center">
                   <Input
+                    ref={taskTitleSpeechFieldRef}
                     className="flex-1"
                     placeholder="e.g., Write blog post about AI trends"
                     value={taskTitle}
                     onChange={(e) => setTaskTitle(e.target.value)}
                   />
                   <DictationButton
+                    speechFieldRef={taskTitleSpeechFieldRef}
+                    gestureRestartRoot={taskTitleDictationRoot}
                     appendText={(snippet) =>
                       setTaskTitle((prev) => (prev ? `${prev.trimEnd()} ` : "") + snippet)
                     }
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div ref={setTaskPromptDictationRoot} className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="text-sm font-medium">Task Instructions</label>
                   <DictationButton
                     size="sm"
                     className="h-9"
+                    speechFieldRef={taskPromptSpeechFieldRef}
+                    gestureRestartRoot={taskPromptDictationRoot}
                     appendText={(snippet) =>
                       setTaskPrompt((prev) => (prev ? `${prev.trimEnd()} ` : "") + snippet)
                     }
                   />
                 </div>
                 <Textarea
+                  ref={taskPromptSpeechFieldRef}
                   placeholder="Provide detailed instructions for the AI employee..."
                   rows={6}
                   value={taskPrompt}

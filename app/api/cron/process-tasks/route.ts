@@ -10,9 +10,17 @@ import { NextResponse } from "next/server"
 export const maxDuration = 300 // 5 minutes max for cron
 
 export async function GET(request: Request) {
-  // Verify cron secret for security
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    console.error("CRON_SECRET is not set; cron cannot authenticate")
+    return NextResponse.json(
+      { error: "Server misconfiguration: CRON_SECRET is not set" },
+      { status: 503 }
+    )
+  }
+
   const authHeader = request.headers.get("authorization")
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

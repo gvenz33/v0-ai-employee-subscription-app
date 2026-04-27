@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import useSWR, { mutate } from "swr"
 import { AI_EMPLOYEES } from "@/lib/products"
 import { createClient } from "@/lib/supabase/client"
@@ -85,6 +85,10 @@ export default function ScheduledAutomationsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [editingAutomationId, setEditingAutomationId] = useState<string | null>(null)
+  const [titleDictationRoot, setTitleDictationRoot] = useState<HTMLDivElement | null>(null)
+  const [promptDictationRoot, setPromptDictationRoot] = useState<HTMLDivElement | null>(null)
+  const titleSpeechFieldRef = useRef<HTMLInputElement>(null)
+  const promptSpeechFieldRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     const loadEmail = async () => {
@@ -251,14 +255,17 @@ export default function ScheduledAutomationsPage() {
             </div>
             <div className="space-y-2">
               <Label>Short title (optional)</Label>
-              <div className="flex gap-2 items-center">
+              <div ref={setTitleDictationRoot} className="flex gap-2 items-center">
                 <Input
+                  ref={titleSpeechFieldRef}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Morning AI digest"
                   className="bg-background flex-1"
                 />
                 <DictationButton
+                  speechFieldRef={titleSpeechFieldRef}
+                  gestureRestartRoot={titleDictationRoot}
                   appendText={(snippet) =>
                     setTitle((prev) => (prev ? `${prev.trimEnd()} ` : "") + snippet)
                   }
@@ -267,18 +274,21 @@ export default function ScheduledAutomationsPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div ref={setPromptDictationRoot} className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Label>Instructions & output format</Label>
               <DictationButton
                 size="sm"
                 className="h-9"
+                speechFieldRef={promptSpeechFieldRef}
+                gestureRestartRoot={promptDictationRoot}
                 appendText={(snippet) =>
                   setPrompt((prev) => (prev ? `${prev.trimEnd()} ` : "") + snippet)
                 }
               />
             </div>
             <Textarea
+              ref={promptSpeechFieldRef}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder={examplePrompt}
