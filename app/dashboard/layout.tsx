@@ -1,8 +1,13 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { getEffectiveWhiteLabelSettings } from "@/lib/white-label"
+
+export const metadata: Metadata = {
+  title: "Dashboard · 247 AI Employees",
+}
 
 export default async function DashboardLayout({
   children,

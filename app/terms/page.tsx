@@ -1,16 +1,47 @@
+import type { Metadata } from "next"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 import { Navbar } from "@/components/landing/navbar"
 import { Footer } from "@/components/landing/footer"
+import { normalizeHost } from "@/lib/tenancy"
+import { getBrandedPublicContextForHost } from "@/lib/branded-public"
 
-export const metadata = {
-  title: "Terms of Use - 247 AI Employees",
-  description: "Terms of Use for 247 AI Employees",
+export async function generateMetadata(): Promise<Metadata> {
+  const h = await headers()
+  const host = normalizeHost(h.get("x-forwarded-host") || h.get("host") || "")
+  const ctx = await getBrandedPublicContextForHost(host)
+  const brand = ctx?.brand_name?.trim()
+  if (brand) {
+    return {
+      title: `Terms · ${brand}`,
+      description: ctx?.meta_description || "Terms of use",
+    }
+  }
+  return {
+    title: "Terms of Use - 247 AI Employees",
+    description: "Terms of Use for 247 AI Employees",
+  }
 }
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const h = await headers()
+  const host = normalizeHost(h.get("x-forwarded-host") || h.get("host") || "")
+  const ctx = await getBrandedPublicContextForHost(host)
+  const ext = ctx?.terms_of_service_url?.trim()
+  if (ext && /^https?:\/\//i.test(ext)) {
+    redirect(ext)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="mx-auto max-w-4xl px-6 py-16">
+        {ctx?.brand_name && (
+          <p className="mb-6 rounded-md border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+            This page describes the 247 AI Employees platform. {ctx.brand_name} may provide additional terms to you
+            separately.
+          </p>
+        )}
         <h1 className="text-4xl font-display font-bold text-foreground mb-8">Terms of Use</h1>
         <p className="text-muted-foreground mb-8">Last updated: March 26, 2026</p>
         

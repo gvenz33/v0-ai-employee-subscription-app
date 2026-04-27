@@ -1,25 +1,43 @@
-import { Navbar } from "@/components/landing/navbar"
-import { Hero } from "@/components/landing/hero"
-import { Features } from "@/components/landing/features"
-import { StarterUseCases } from "@/components/landing/starter-use-cases"
-import { AgentsShowcase } from "@/components/landing/agents-showcase"
-import { Pricing } from "@/components/landing/pricing"
-import { FAQ } from "@/components/landing/faq"
-import { Footer } from "@/components/landing/footer"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
+import type { Metadata } from "next"
+import { normalizeHost } from "@/lib/tenancy"
+import { getBrandedPublicContextForHost } from "@/lib/branded-public"
+import { siteDefaultMetadata } from "@/lib/site-metadata"
+import { MarketingHome } from "@/components/landing/marketing-home"
+import { TenantBrandedLanding } from "@/components/tenant/tenant-branded-landing"
 
-export default function Home() {
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <main>
-        <Hero />
-        <Features />
-        <StarterUseCases />
-        <AgentsShowcase />
-        <Pricing />
-        <FAQ />
-      </main>
-      <Footer />
-    </div>
-  )
+export async function generateMetadata(): Promise<Metadata> {
+  const h = await headers()
+  const host = normalizeHost(h.get("x-forwarded-host") || h.get("host") || "")
+  const ctx = await getBrandedPublicContextForHost(host)
+  if (ctx?.page_title || ctx?.meta_description || ctx?.og_image_url) {
+    return {
+      title: ctx.page_title || ctx.brand_name || siteDefaultMetadata.title,
+      description: ctx.meta_description || (typeof siteDefaultMetadata.description === "string" ? siteDefaultMetadata.description : undefined),
+      openGraph: ctx.og_image_url ? { images: [{ url: ctx.og_image_url }] } : undefined,
+    }
+  }
+  return siteDefaultMetadata
+}
+
+export default async function Home() {
+  const h = await headers()
+  const tenantId = h.get("x-tenant-id")
+  const host = normalizeHost(h.get("x-forwarded-host") || h.get("host") || "")
+  const ctx = await getBrandedPublicContextForHost(host)
+
+  if (tenantId && !ctx) {
+    redirect("/auth/login")
+  }
+
+  if (ctx?.public_landing_enabled) {
+    return <TenantBrandedLanding ctx={ctx} />
+  }
+
+  if (tenantId && ctx && !ctx.public_landing_enabled) {
+    redirect("/auth/login")
+  }
+
+  return <MarketingHome />
 }

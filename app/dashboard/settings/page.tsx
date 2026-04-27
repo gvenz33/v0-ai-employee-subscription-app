@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { User, Bell, Shield, Key, Save, Loader2, Globe, RefreshCw } from "lucide-react"
+import { User, Bell, Shield, Key, Save, Loader2, Globe, RefreshCw, Sparkles } from "lucide-react"
 import { AutomationEmailSetupCard } from "@/components/dashboard/automation-email-setup-card"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -31,6 +31,18 @@ export default function SettingsPage() {
     support_email: "",
     primary_color: "",
     remove_247_branding: false,
+    public_landing_enabled: false,
+    branded_auth_enabled: true,
+    page_title: "",
+    meta_description: "",
+    og_image_url: "",
+    privacy_policy_url: "",
+    terms_of_service_url: "",
+    hero_headline: "",
+    hero_subheadline: "",
+    hero_primary_cta_label: "",
+    hero_primary_cta_href: "",
+    support_page_markdown: "",
   })
   const [tenantSlug, setTenantSlug] = useState("")
   const [tenantUrl, setTenantUrl] = useState("")
@@ -103,13 +115,26 @@ export default function SettingsPage() {
             if (whiteLabelRes.ok) {
               const whiteLabelData = await whiteLabelRes.json()
               if (whiteLabelData?.settings) {
+                const s = whiteLabelData.settings
                 setWhiteLabel({
-                  enabled: Boolean(whiteLabelData.settings.enabled),
-                  brand_name: whiteLabelData.settings.brand_name || "",
-                  logo_url: whiteLabelData.settings.logo_url || "",
-                  support_email: whiteLabelData.settings.support_email || "",
-                  primary_color: whiteLabelData.settings.primary_color || "",
-                  remove_247_branding: Boolean(whiteLabelData.settings.remove_247_branding),
+                  enabled: Boolean(s.enabled),
+                  brand_name: s.brand_name || "",
+                  logo_url: s.logo_url || "",
+                  support_email: s.support_email || "",
+                  primary_color: s.primary_color || "",
+                  remove_247_branding: Boolean(s.remove_247_branding),
+                  public_landing_enabled: Boolean(s.public_landing_enabled),
+                  branded_auth_enabled: s.branded_auth_enabled !== false,
+                  page_title: s.page_title || "",
+                  meta_description: s.meta_description || "",
+                  og_image_url: s.og_image_url || "",
+                  privacy_policy_url: s.privacy_policy_url || "",
+                  terms_of_service_url: s.terms_of_service_url || "",
+                  hero_headline: s.hero_headline || "",
+                  hero_subheadline: s.hero_subheadline || "",
+                  hero_primary_cta_label: s.hero_primary_cta_label || "",
+                  hero_primary_cta_href: s.hero_primary_cta_href || "",
+                  support_page_markdown: s.support_page_markdown || "",
                 })
               }
               if (whiteLabelData?.tenant?.slug) {
@@ -625,6 +650,149 @@ export default function SettingsPage() {
                 </Button>
               )}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {subscriptionTier === "enterprise" && (
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5" />
+              Branded public experience
+            </CardTitle>
+            <CardDescription>
+              Tenant landing, SEO, legal and support links, and branded auth — available on your subdomain or custom domain
+              when white-label is enabled.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-foreground">Public landing page</p>
+                <p className="text-sm text-muted-foreground">
+                  Show a branded home at your tenant URL instead of redirecting visitors to sign-in.
+                </p>
+              </div>
+              <Switch
+                checked={whiteLabel.public_landing_enabled}
+                onCheckedChange={(checked) => setWhiteLabel((prev) => ({ ...prev, public_landing_enabled: checked }))}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-foreground">Branded auth pages</p>
+                <p className="text-sm text-muted-foreground">Logo and colors on sign-in, sign-up, and password recovery.</p>
+              </div>
+              <Switch
+                checked={whiteLabel.branded_auth_enabled}
+                onCheckedChange={(checked) => setWhiteLabel((prev) => ({ ...prev, branded_auth_enabled: checked }))}
+              />
+            </div>
+            <Separator />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="pubPageTitle">Page title (SEO)</Label>
+                <Input
+                  id="pubPageTitle"
+                  value={whiteLabel.page_title}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, page_title: e.target.value }))}
+                  placeholder="My Company · AI workspace"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="pubMetaDesc">Meta description</Label>
+                <Textarea
+                  id="pubMetaDesc"
+                  value={whiteLabel.meta_description}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, meta_description: e.target.value }))}
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="pubOg">Open Graph image URL</Label>
+                <Input
+                  id="pubOg"
+                  value={whiteLabel.og_image_url}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, og_image_url: e.target.value }))}
+                  placeholder="https://..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pubPrivacy">Privacy policy URL</Label>
+                <Input
+                  id="pubPrivacy"
+                  value={whiteLabel.privacy_policy_url}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, privacy_policy_url: e.target.value }))}
+                  placeholder="https://... (optional)"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pubTerms">Terms of service URL</Label>
+                <Input
+                  id="pubTerms"
+                  value={whiteLabel.terms_of_service_url}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, terms_of_service_url: e.target.value }))}
+                  placeholder="https://... (optional)"
+                />
+              </div>
+            </div>
+            <Separator />
+            <p className="text-sm font-medium text-foreground">Landing copy (optional)</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="pubHeroH">Headline</Label>
+                <Input
+                  id="pubHeroH"
+                  value={whiteLabel.hero_headline}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, hero_headline: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="pubHeroS">Subheadline</Label>
+                <Textarea
+                  id="pubHeroS"
+                  value={whiteLabel.hero_subheadline}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, hero_subheadline: e.target.value }))}
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pubCtaL">Primary CTA label</Label>
+                <Input
+                  id="pubCtaL"
+                  value={whiteLabel.hero_primary_cta_label}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, hero_primary_cta_label: e.target.value }))}
+                  placeholder="Get started"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pubCtaH">Primary CTA link</Label>
+                <Input
+                  id="pubCtaH"
+                  value={whiteLabel.hero_primary_cta_href}
+                  onChange={(e) => setWhiteLabel((prev) => ({ ...prev, hero_primary_cta_href: e.target.value }))}
+                  placeholder="/auth/sign-up or https://..."
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pubSupport">Support page (plain text, line breaks)</Label>
+              <Textarea
+                id="pubSupport"
+                value={whiteLabel.support_page_markdown}
+                onChange={(e) => setWhiteLabel((prev) => ({ ...prev, support_page_markdown: e.target.value }))}
+                rows={5}
+                placeholder="Shown at /support on your tenant host."
+              />
+            </div>
+            <Button onClick={handleSaveWhiteLabel} disabled={savingWhiteLabel} variant="secondary">
+              {savingWhiteLabel ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Save public experience
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Or use &quot;Save White Label Settings&quot; in the section above — both save all of these fields.
+            </p>
           </CardContent>
         </Card>
       )}

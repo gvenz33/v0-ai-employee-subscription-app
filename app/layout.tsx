@@ -3,6 +3,8 @@ import { Inter, Space_Grotesk } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { SupportChatWidget } from "@/components/support-chat-widget"
+import { shouldShowSupportChatWidget } from "@/lib/branded-public"
+import { siteDefaultMetadata } from "@/lib/site-metadata"
 import "./globals.css"
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
@@ -11,21 +13,19 @@ const _spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
 })
 
-export const metadata: Metadata = {
-  title: "247 AI Employees - Hire AI Employees That Work 24/7",
-  description:
-    "Deploy intelligent AI agents that automate sales, marketing, support, and more. Scale your team without the overhead. Available 24/7.",
-}
+export const metadata: Metadata = siteDefaultMetadata
 
 export const viewport: Viewport = {
   themeColor: "#3b82f6",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const showSupport = await shouldShowSupportChatWidget()
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -38,7 +38,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <SupportChatWidget />
+          {showSupport ? <SupportChatWidget /> : null}
           <Toaster />
         </ThemeProvider>
       </body>
