@@ -48,6 +48,11 @@ export async function GET(request: Request) {
       return empTierIndex <= userTierIndex
     })
 
+    const effectivePriceCents =
+      profile.subscription_tier === "enterprise" && profile.enterprise_custom_monthly_cents != null
+        ? profile.enterprise_custom_monthly_cents
+        : currentPlan.monthlyPriceInCents
+
     const response = {
       user_id: auth.data.user_id,
       subscription: {
@@ -58,7 +63,8 @@ export async function GET(request: Request) {
         tasks_limit: profile.tasks_limit || 100,
         tasks_remaining: Math.max(0, (profile.tasks_limit || 100) - (profile.tasks_used || 0)),
         billing_cycle: "monthly",
-        price_cents: currentPlan.monthlyPriceInCents,
+        price_cents: effectivePriceCents,
+        price_is_custom: profile.subscription_tier === "enterprise",
       },
       features: currentPlan.features,
       ai_employees: {

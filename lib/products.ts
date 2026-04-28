@@ -13,6 +13,10 @@ export interface Plan {
   popular?: boolean
 }
 
+export function isFoundersPlan(planId: string): boolean {
+  return planId === "enterprise"
+}
+
 export const PLANS: Plan[] = [
   {
     id: "personal",
@@ -79,8 +83,8 @@ export const PLANS: Plan[] = [
     id: "enterprise",
     name: "Enterprise",
     description: "Full AI workforce with premium specialized agents",
-    monthlyPriceInCents: 19900, // $199/month
-    annualPriceInCents: 199000, // $1990/year (10 months, 2 months free)
+    monthlyPriceInCents: 0,
+    annualPriceInCents: 0,
     features: [
       "All 30 AI Employees",
       "Unlimited tasks",
@@ -112,12 +116,14 @@ export function getPlanById(id: string): Plan | undefined {
 export function getPriceInCents(planId: string, interval: 'month' | 'year'): number {
   const plan = getPlanById(planId)
   if (!plan) return 0
+  if (isFoundersPlan(planId)) return 0
   return interval === 'year' ? plan.annualPriceInCents : plan.monthlyPriceInCents
 }
 
 export function getAnnualSavings(planId: string): number {
   const plan = getPlanById(planId)
   if (!plan) return 0
+  if (isFoundersPlan(planId)) return 0
   const monthlyCostForYear = plan.monthlyPriceInCents * 12
   return monthlyCostForYear - plan.annualPriceInCents
 }

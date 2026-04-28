@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { PLANS } from "@/lib/products"
+import { isFoundersPlan, PLANS } from "@/lib/products"
 import { Button } from "@/components/ui/button"
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -69,6 +69,7 @@ export function Pricing() {
 
         <div className="mx-auto mt-12 grid max-w-6xl gap-6 lg:grid-cols-4">
           {PLANS.map((plan) => {
+            const isFounders = isFoundersPlan(plan.id)
             const price = billingInterval === "year" 
               ? plan.annualPriceInCents 
               : plan.monthlyPriceInCents
@@ -110,13 +111,20 @@ export function Pricing() {
                 </div>
 
                 <div className="mt-4">
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-display text-3xl font-bold text-foreground">
-                      ${displayPrice}
-                    </span>
-                    <span className="text-sm text-muted-foreground">/mo</span>
-                  </div>
-                  {billingInterval === "year" && savings > 0 && (
+                  {isFounders ? (
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-display text-3xl font-bold text-foreground">Custom</span>
+                      <span className="text-sm text-muted-foreground">pricing</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-display text-3xl font-bold text-foreground">
+                        ${displayPrice}
+                      </span>
+                      <span className="text-sm text-muted-foreground">/mo</span>
+                    </div>
+                  )}
+                  {billingInterval === "year" && savings > 0 && !isFounders && (
                     <div className="mt-1">
                       <p className="text-xs text-muted-foreground">
                         <span className="line-through">${monthlyEquivalent}/mo</span>
@@ -168,9 +176,15 @@ export function Pricing() {
                   size="sm"
                   asChild
                 >
-                  <Link href={`/auth/sign-up?plan=${plan.id}&interval=${billingInterval}`}>
-                    Get Started
-                  </Link>
+                  {isFounders ? (
+                    <Link href="/contact?subject=Founders%20plan%20consultation">
+                      Contact Sales
+                    </Link>
+                  ) : (
+                    <Link href={`/auth/sign-up?plan=${plan.id}&interval=${billingInterval}`}>
+                      Get Started
+                    </Link>
+                  )}
                 </Button>
               </div>
             )

@@ -3,6 +3,7 @@
 import { getStripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import {
+  isFoundersPlan,
   PLANS,
   getPriceInCents,
   TOKEN_PACKS,
@@ -24,6 +25,9 @@ export async function createCheckoutSession(planId: string, interval: 'month' | 
   const plan = PLANS.find(p => p.id === planId)
   if (!plan) {
     throw new Error('Plan not found')
+  }
+  if (isFoundersPlan(planId)) {
+    throw new Error('Founders plan is sold via consultation only. Please contact sales.')
   }
 
   const priceInCents = getPriceInCents(planId, interval)

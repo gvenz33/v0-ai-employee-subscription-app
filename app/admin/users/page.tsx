@@ -21,6 +21,8 @@ interface Profile {
   subscription_tier: string
   tasks_used: number
   tasks_limit: number
+  enterprise_custom_monthly_cents?: number | null
+  enterprise_custom_yearly_cents?: number | null
   api_access_suspended?: boolean
   is_superadmin: boolean
   is_admin: boolean
@@ -266,11 +268,68 @@ export default function UserManagementPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {PLANS.map(plan => (
-                      <SelectItem key={plan.id} value={plan.id}>{plan.name} - ${plan.monthlyPriceInCents / 100}/mo</SelectItem>
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.id === "enterprise" ? "Founders - Custom" : `${plan.name} - $${plan.monthlyPriceInCents / 100}/mo`}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {selectedUser.subscription_tier === "enterprise" && (
+                <div className="space-y-3 rounded-md border border-border p-4">
+                  <Label className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" /> Founders custom pricing (superadmin quote)
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Set negotiated pricing in USD. Leave blank to keep it as contact-only custom pricing.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Monthly price (USD)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={
+                          selectedUser.enterprise_custom_monthly_cents == null
+                            ? ""
+                            : (selectedUser.enterprise_custom_monthly_cents / 100).toString()
+                        }
+                        onChange={(e) => {
+                          const v = e.target.value.trim()
+                          const cents = v === "" ? null : Math.round(Number(v) * 100)
+                          setSelectedUser({
+                            ...selectedUser,
+                            enterprise_custom_monthly_cents: Number.isFinite(cents as number) ? cents : null,
+                          })
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Yearly price (USD)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={
+                          selectedUser.enterprise_custom_yearly_cents == null
+                            ? ""
+                            : (selectedUser.enterprise_custom_yearly_cents / 100).toString()
+                        }
+                        onChange={(e) => {
+                          const v = e.target.value.trim()
+                          const cents = v === "" ? null : Math.round(Number(v) * 100)
+                          setSelectedUser({
+                            ...selectedUser,
+                            enterprise_custom_yearly_cents: Number.isFinite(cents as number) ? cents : null,
+                          })
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Task Limits */}
               <div className="grid grid-cols-2 gap-4">

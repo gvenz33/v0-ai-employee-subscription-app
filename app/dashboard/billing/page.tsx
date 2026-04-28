@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Check, CreditCard, Download, ExternalLink, AlertCircle } from 'lucide-react'
-import { PLANS, getAnnualSavings } from '@/lib/products'
+import { isFoundersPlan, PLANS, getAnnualSavings } from '@/lib/products'
 import { Checkout } from '@/components/dashboard/checkout'
 import { createBillingPortalSession, getInvoices } from '@/app/actions/stripe'
 import { createClient } from '@/lib/supabase/client'
@@ -32,6 +32,8 @@ export default function BillingPage() {
   
   const [selectedPlan, setSelectedPlan] = useState<{ id: string; interval: 'month' | 'year' } | null>(null)
   const [currentTier, setCurrentTier] = useState<string>('personal')
+  const [customMonthlyCents, setCustomMonthlyCents] = useState<number | null>(null)
+  const [customYearlyCents, setCustomYearlyCents] = useState<number | null>(null)
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month')
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,12 +47,14 @@ export default function BillingPage() {
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_tier')
+          .select('subscription_tier, enterprise_custom_monthly_cents, enterprise_custom_yearly_cents')
           .eq('id', user.id)
           .single()
         
         if (profile) {
           setCurrentTier(profile.subscription_tier)
+          setCustomMonthlyCents(profile.enterprise_custom_monthly_cents ?? null)
+          setCustomYearlyCents(profile.enterprise_custom_yearly_cents ?? null)
         }
 
         const invoiceData = await getInvoices()
@@ -74,6 +78,12 @@ export default function BillingPage() {
   }
 
   const currentPlan = PLANS.find(p => p.id === currentTier)
+  const currentPlanDisplayPrice = (() => {
+    if (!currentPlan) return '$9/month'
+    if (!isFoundersPlan(currentTier)) return `$${(currentPlan.monthlyPriceInCents || 900) / 100}/month`
+    if (customMonthlyCents != null) return `$${(customMonthlyCents / 100).toFixed(2)}/month (custom)`
+    return 'Custom pricing (contact sales)'
+  })()
 
   if (loading) {
     return (
@@ -127,11 +137,16 @@ export default function BillingPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-2xl font-bold text-foreground">
-                {currentPlan?.name || 'Personal'}
+                {isFoundersPlan(currentTier) ? 'Founders' : (currentPlan?.name || 'Personal')}
               </h3>
               <p className="text-muted-foreground">
-                ${(currentPlan?.monthlyPriceInCents || 900) / 100}/month
+                {currentPlanDisplayPrice}
               </p>
+              {isFoundersPlan(currentTier) && customYearlyCents != null && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Annual custom: ${(customYearlyCents / 100).toFixed(2)}/year
+                </p>
+              )}
             </div>
             <Badge variant={currentTier === 'enterprise' ? 'default' : 'secondary'}>
               {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}
@@ -188,6 +203,7 @@ export default function BillingPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {PLANS.map((plan) => {
             const isCurrentPlan = plan.id === currentTier
+            const isFounders = isFoundersPlan(plan.id)
             const isUpgrade = PLANS.findIndex(p => p.id === plan.id) > 
                              PLANS.findIndex(p => p.id === currentTier)
             
@@ -221,12 +237,18 @@ export default function BillingPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="mb-2">
-                    <span className="text-4xl font-bold text-foreground">
-                      ${displayPrice}
-                    </span>
-                    <span className="text-muted-foreground">/month</span>
+                    {isFounders ? (
+                      <div className="text-2xl font-bold text-foreground">Custom pricing</div>
+                    ) : (
+                      <>
+                        <span className="text-4xl font-bold text-foreground">
+                          ${displayPrice}
+                        </span>
+                        <span className="text-muted-foreground">/month</span>
+                      </>
+                    )}
                   </div>
-                  {billingInterval === 'year' && (
+                  {billingInterval === 'year' && !isFounders && (
                     <div className="mb-6 space-y-1">
                       <p className="text-sm text-muted-foreground">
                         <span className="line-through">${plan.monthlyPriceInCents / 100}/mo</span>
@@ -253,6 +275,10 @@ export default function BillingPage() {
                   {isCurrentPlan ? (
                     <Button className="w-full" variant="secondary" disabled>
                       Current Plan
+                    </Button>
+                  ) : isFounders ? (
+                    <Button className="w-full" asChild>
+                      <a href="/contact?subject=Founders%20plan%20consultation">Contact Sales</a>
                     </Button>
                   ) : isUpgrade ? (
                     <Button 
