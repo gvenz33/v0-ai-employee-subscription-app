@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 import { AI_EMPLOYEES } from "@/lib/products"
 import { generateText } from "ai"
 import { NextRequest } from "next/server"
@@ -49,6 +50,24 @@ export async function POST(request: NextRequest) {
     const results = []
 
     for (const task of tasks) {
+      const guard = await guardTenantApiAccess(task.user_id as string, request)
+      if (!guard.ok) {
+        if (guard.status === 429) {
+          results.push({ task_id: task.id, status: "skipped", error: guard.message })
+          continue
+        }
+        await supabase
+          .from("tasks")
+          .update({
+            status: "failed",
+            error_message: guard.message,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", task.id)
+        results.push({ task_id: task.id, status: "failed", error: guard.message })
+        continue
+      }
+
       const employee = AI_EMPLOYEES.find(e => e.id === task.ai_employee_id)
       
       if (!employee) {

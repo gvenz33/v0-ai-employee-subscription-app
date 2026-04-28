@@ -2,6 +2,7 @@ import { streamText, convertToModelMessages } from 'ai'
 import { createClient } from '@/lib/supabase/server'
 import { getEmployeeById, hasAccessToEmployee } from '@/lib/products'
 import { validateApiKey, logApiRequest } from '@/lib/api-auth'
+import { guardTenantApiAccess } from '@/lib/tenant-api-quota'
 
 export async function POST(req: Request) {
   const startTime = Date.now()
@@ -46,6 +47,12 @@ export async function POST(req: Request) {
     }
     
     userId = user.id
+  }
+
+  const guard = await guardTenantApiAccess(userId, req)
+  if (!guard.ok) {
+    if (apiKeyId) await logApiRequest(apiKeyId, userId, '/api/chat', 'POST', guard.status, Date.now() - startTime, req)
+    return new Response(guard.message, { status: guard.status })
   }
 
   const supabase = await createClient()

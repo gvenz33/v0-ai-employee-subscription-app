@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getSupabaseAdmin } from "@/lib/supabase/admin"
+import { recordAuditLog } from "@/lib/audit-log"
+
+const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function isEnterpriseTier(tier: string | null | undefined) {
   return tier === "enterprise"
@@ -75,14 +79,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid severity." }, { status: 400 })
   }
 
+  const rawIncident = body.incident_id != null ? String(body.incident_id).trim() : ""
+  let incidentId: string | null = null
+  if (rawIncident) {
+    if (!uuidRe.test(rawIncident)) {
+      return NextResponse.json({ error: "Invalid incident reference." }, { status: 400 })
+    }
+    const admin = getSupabaseAdmin()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: inc } = await (admin as any)
+      .from("ops_incidents")
+      .select("id")
+      .eq("id", rawIncident)
+      .maybeSingle()
+    if (!inc?.id) {
+      return NextResponse.json({ error: "Unknown incident id." }, { status: 400 })
+    }
+    incidentId = rawIncident
+  }
+
+  const insertRow: Record<string, unknown> = {
+    user_id: user.id,
+    title,
+    description,
+    severity,
+  }
+  if (incidentId) insertRow.incident_id = incidentId
+
   const { data, error } = await supabase
     .from("sla_tickets")
-    .insert({
-      user_id: user.id,
-      title,
-      description,
-      severity,
-    })
+    .insert(insertRow)
     .select("id, title, description, severity, status, responded_at, created_at")
     .single()
 
@@ -95,6 +121,17 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+
+  await recordAuditLog({
+    workspaceOwnerId: user.id,
+    actorUserId: user.id,
+    source: "dashboard",
+    action: "sla_ticket.create",
+    resourceType: "sla_tickets",
+    resourceId: data.id,
+    details: { title, severity, incident_id: incidentId },
+    request,
+  })
 
   return NextResponse.json({ ticket: data })
 }

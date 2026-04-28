@@ -32,6 +32,7 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar
         isAdmin={profile?.is_superadmin || profile?.is_admin}
+        subscriptionTier={profile?.subscription_tier ?? null}
         whiteLabel={whiteLabel}
       />
       <div className="flex-1 flex flex-col">

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { AI_EMPLOYEES } from "@/lib/products"
 import { NextRequest } from "next/server"
 import { validateApiKey, logApiRequest } from "@/lib/api-auth"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 
 // User-facing tasks API with API key support
 
@@ -38,6 +39,12 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       if (apiKeyId) await logApiRequest(apiKeyId, null, "/api/tasks", "GET", 401, Date.now() - startTime, request)
       return Response.json({ error: authError || "Unauthorized" }, { status: 401 })
+    }
+
+    const guard = await guardTenantApiAccess(userId, request)
+    if (!guard.ok) {
+      if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "GET", guard.status, Date.now() - startTime, request)
+      return Response.json({ error: guard.message }, { status: guard.status })
     }
 
     const supabase = await createClient()
@@ -96,6 +103,12 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       if (apiKeyId) await logApiRequest(apiKeyId, null, "/api/tasks", "POST", 401, Date.now() - startTime, request)
       return Response.json({ error: authError || "Unauthorized" }, { status: 401 })
+    }
+
+    const guard = await guardTenantApiAccess(userId, request)
+    if (!guard.ok) {
+      if (apiKeyId) await logApiRequest(apiKeyId, userId, "/api/tasks", "POST", guard.status, Date.now() - startTime, request)
+      return Response.json({ error: guard.message }, { status: guard.status })
     }
 
     const supabase = await createClient()

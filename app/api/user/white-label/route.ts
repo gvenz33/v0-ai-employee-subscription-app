@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { getRootDomain, normalizeTenantSlug } from "@/lib/tenancy"
+import { recordAuditLog } from "@/lib/audit-log"
 
 function isEnterpriseTier(tier: string | null | undefined) {
   return tier === "enterprise"
@@ -167,6 +168,21 @@ export async function PUT(request: Request) {
       )
     }
   }
+
+  await recordAuditLog({
+    workspaceOwnerId: user.id,
+    actorUserId: user.id,
+    source: "dashboard",
+    action: "white_label.update",
+    resourceType: "user_white_label_settings",
+    resourceId: user.id,
+    details: {
+      enabled: row.enabled,
+      tenant_slug: requestedSlug || null,
+      public_landing: row.public_landing_enabled,
+    },
+    request,
+  })
 
   return NextResponse.json({ ok: true, tenant_host: requestedSlug ? `${requestedSlug}.${getRootDomain()}` : null })
 }

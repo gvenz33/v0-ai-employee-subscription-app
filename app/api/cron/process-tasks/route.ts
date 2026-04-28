@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js"
 import { generateText } from "ai"
 import { AI_EMPLOYEES } from "@/lib/products"
 import { runDueScheduledAutomations } from "@/lib/run-scheduled-automations"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 import { NextResponse } from "next/server"
 
 // This endpoint is called by a cron job to process pending tasks
@@ -46,6 +47,23 @@ export async function GET(request: Request) {
   let failed = 0
 
   for (const task of tasks || []) {
+    const guard = await guardTenantApiAccess(task.user_id as string, request)
+    if (!guard.ok) {
+      if (guard.status === 429) {
+        continue
+      }
+      await supabase
+        .from("tasks")
+        .update({
+          status: "failed",
+          error_message: guard.message,
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", task.id)
+      failed++
+      continue
+    }
+
     try {
       // Mark as processing
       await supabase
@@ -108,7 +126,7 @@ export async function GET(request: Request) {
 
   let scheduled = { processed: 0, failed: 0, skipped: 0 }
   try {
-    scheduled = await runDueScheduledAutomations(supabase)
+    scheduled = await runDueScheduledAutomations(supabase, { abuseRequest: request })
   } catch (e) {
     console.error("Scheduled automations cron error:", e)
   }

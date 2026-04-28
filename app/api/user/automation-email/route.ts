@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 import { z } from "zod"
 import { encryptAutomationSecret } from "@/lib/automation-email-crypto"
 
@@ -42,12 +43,17 @@ function applyPreset(
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+  const guard = await guardTenantApiAccess(user.id, request)
+  if (!guard.ok) {
+    return Response.json({ error: guard.message }, { status: guard.status })
+  }
 
   const { data, error } = await supabase
     .from("user_automation_email_settings")
@@ -102,6 +108,11 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+  const guard = await guardTenantApiAccess(user.id, request)
+  if (!guard.ok) {
+    return Response.json({ error: guard.message }, { status: guard.status })
+  }
 
   let preset: { smtp_host: string; smtp_port: number; smtp_secure: boolean }
   try {
@@ -175,12 +186,17 @@ export async function POST(request: Request) {
   return Response.json({ ok: true })
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+  const guard = await guardTenantApiAccess(user.id, request)
+  if (!guard.ok) {
+    return Response.json({ error: guard.message }, { status: guard.status })
+  }
 
   const { error } = await supabase.from("user_automation_email_settings").delete().eq("user_id", user.id)
 

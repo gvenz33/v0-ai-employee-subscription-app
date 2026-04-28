@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 import { generateApiKey, hashApiKey } from "@/lib/api-auth"
 
 // Create a new API key
@@ -9,6 +10,11 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const guard = await guardTenantApiAccess(user.id, request)
+  if (!guard.ok) {
+    return NextResponse.json({ error: guard.message }, { status: guard.status })
   }
 
   try {
@@ -54,6 +60,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const guard = await guardTenantApiAccess(user.id, request)
+  if (!guard.ok) {
+    return NextResponse.json({ error: guard.message }, { status: guard.status })
+  }
+
   const { data: keys, error } = await supabase
     .from("api_keys")
     .select("id, name, key_prefix, is_active, permissions, last_used_at, expires_at, created_at")
@@ -86,6 +97,11 @@ export async function DELETE(request: Request) {
 
   if (!keyId) {
     return NextResponse.json({ error: "Missing key ID" }, { status: 400 })
+  }
+
+  const guard = await guardTenantApiAccess(user.id, request)
+  if (!guard.ok) {
+    return NextResponse.json({ error: guard.message }, { status: guard.status })
   }
 
   const { error } = await supabase

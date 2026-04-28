@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { validateApiKey, logApiRequest } from "@/lib/api-auth"
 import { createClient } from "@/lib/supabase/server"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 
 export async function GET(request: Request) {
   const startTime = Date.now()
@@ -16,6 +17,12 @@ export async function GET(request: Request) {
   if (!auth.data.permissions.status) {
     await logApiRequest(auth.data.id, auth.data.user_id, "/api/status", "GET", 403, Date.now() - startTime, request)
     return NextResponse.json({ error: "API key does not have status permission" }, { status: 403 })
+  }
+
+  const guard = await guardTenantApiAccess(auth.data.user_id, request)
+  if (!guard.ok) {
+    await logApiRequest(auth.data.id, auth.data.user_id, "/api/status", "GET", guard.status, Date.now() - startTime, request)
+    return NextResponse.json({ error: guard.message }, { status: guard.status })
   }
 
   const { searchParams } = new URL(request.url)

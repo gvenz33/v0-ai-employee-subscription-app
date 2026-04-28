@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 import { AI_EMPLOYEES, canAccessEmployee } from "@/lib/products"
 import { generateText } from "ai"
 import { NextRequest } from "next/server"
@@ -54,6 +55,11 @@ export async function POST(request: NextRequest) {
         { error: "Invalid API key" },
         { status: 401 }
       )
+    }
+
+    const guard = await guardTenantApiAccess(profile.id, request)
+    if (!guard.ok) {
+      return Response.json({ error: guard.message }, { status: guard.status })
     }
 
     // Check tier access against current catalog tiers (personal/entrepreneur/business/enterprise)

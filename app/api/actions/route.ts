@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { validateApiKey, logApiRequest } from "@/lib/api-auth"
 import { createClient } from "@/lib/supabase/server"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 import { AI_EMPLOYEES, getEmployeeById } from "@/lib/products"
 
 // Available action types
@@ -29,6 +30,12 @@ export async function POST(request: Request) {
   if (!auth.data.permissions.actions) {
     await logApiRequest(auth.data.id, auth.data.user_id, "/api/actions", "POST", 403, Date.now() - startTime, request)
     return NextResponse.json({ error: "API key does not have actions permission" }, { status: 403 })
+  }
+
+  const guard = await guardTenantApiAccess(auth.data.user_id, request)
+  if (!guard.ok) {
+    await logApiRequest(auth.data.id, auth.data.user_id, "/api/actions", "POST", guard.status, Date.now() - startTime, request)
+    return NextResponse.json({ error: guard.message }, { status: guard.status })
   }
 
   try {

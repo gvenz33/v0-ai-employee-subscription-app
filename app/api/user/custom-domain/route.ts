@@ -8,6 +8,7 @@ import {
   vercelGetDomainConfig,
   vercelRemoveDomainFromProject,
 } from "@/lib/vercel-domains"
+import { recordAuditLog } from "@/lib/audit-log"
 
 function defaultCnameTarget(): string {
   return (
@@ -154,6 +155,17 @@ export async function POST(request: Request) {
     )
   }
 
+  await recordAuditLog({
+    workspaceOwnerId: user.id,
+    actorUserId: user.id,
+    source: "api",
+    action: "custom_domain.register",
+    resourceType: "user_custom_domains",
+    resourceId: hostname,
+    details: { hostname, status: dbRow.status },
+    request,
+  })
+
   return NextResponse.json({
     ok: true,
     hostname,
@@ -165,7 +177,7 @@ export async function POST(request: Request) {
   })
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -186,7 +198,19 @@ export async function DELETE() {
     }
   }
 
+  const host = row?.hostname ?? null
   await supabase.from("user_custom_domains").delete().eq("user_id", user.id)
+
+  await recordAuditLog({
+    workspaceOwnerId: user.id,
+    actorUserId: user.id,
+    source: "api",
+    action: "custom_domain.remove",
+    resourceType: "user_custom_domains",
+    resourceId: host,
+    details: { hostname: host },
+    request,
+  })
 
   return NextResponse.json({ ok: true })
 }
@@ -243,6 +267,17 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    await recordAuditLog({
+      workspaceOwnerId: user.id,
+      actorUserId: user.id,
+      source: "api",
+      action: "custom_domain.active_toggle",
+      resourceType: "user_custom_domains",
+      resourceId: row.hostname,
+      details: { is_active: body.is_active, status },
+      request,
+    })
+
     return NextResponse.json({ ok: true, is_active: body.is_active, status })
   }
 
@@ -277,6 +312,17 @@ export async function PATCH(request: Request) {
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", user.id)
+
+  await recordAuditLog({
+    workspaceOwnerId: user.id,
+    actorUserId: user.id,
+    source: "api",
+    action: "custom_domain.sync",
+    resourceType: "user_custom_domains",
+    resourceId: row.hostname,
+    details: { status },
+    request,
+  })
 
   return NextResponse.json({ ok: true, status })
 }

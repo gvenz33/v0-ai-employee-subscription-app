@@ -5,6 +5,7 @@ import { generateText } from "ai"
 import { AI_EMPLOYEES } from "@/lib/products"
 import { computeNextRunAt } from "@/lib/compute-next-automation-run"
 import { sendAutomationDigestEmail } from "@/lib/send-automation-email"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 
 type AutomationRow = {
   id: string
@@ -29,7 +30,7 @@ const tierOrder: Record<string, number> = {
 
 export async function runDueScheduledAutomations(
   supabase: SupabaseClient,
-  options: { limit?: number } = {}
+  options: { limit?: number; abuseRequest?: Request } = {}
 ): Promise<{ processed: number; failed: number; skipped: number }> {
   const limit = options.limit ?? 10
   const now = new Date().toISOString()
@@ -70,6 +71,30 @@ export async function runDueScheduledAutomations(
         .eq("id", row.id)
       failed++
       continue
+    }
+
+    if (options.abuseRequest) {
+      const guard = await guardTenantApiAccess(row.user_id, options.abuseRequest)
+      if (!guard.ok) {
+        const bump = computeNextRunAt({
+          frequency: row.frequency,
+          timezone: row.timezone,
+          timeLocal: row.time_local,
+          weekday: row.weekday,
+          strictlyAfter: new Date(),
+        })
+        await supabase
+          .from("scheduled_automations")
+          .update({
+            last_error: guard.message.slice(0, 480),
+            last_run_at: new Date().toISOString(),
+            next_run_at: bump.toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", row.id)
+        skipped++
+        continue
+      }
     }
 
     const { data: profile } = await supabase

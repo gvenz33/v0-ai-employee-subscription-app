@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 import { AI_EMPLOYEES } from "@/lib/products"
 import { computeNextRunAt, parseTimeLocalHHMM } from "@/lib/compute-next-automation-run"
 import { scheduledAutomationBodySchema, tierOrder } from "@/lib/scheduled-automation-schema"
@@ -43,6 +44,11 @@ export async function PATCH(
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+  const guard = await guardTenantApiAccess(user.id, request)
+  if (!guard.ok) {
+    return Response.json({ error: guard.message }, { status: guard.status })
+  }
 
   const raw = await request.json().catch(() => ({}))
   const parsed = patchFieldsSchema.safeParse(raw)
@@ -201,7 +207,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params
@@ -210,6 +216,11 @@ export async function DELETE(
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+  const guard = await guardTenantApiAccess(user.id, request)
+  if (!guard.ok) {
+    return Response.json({ error: guard.message }, { status: guard.status })
+  }
 
   const { error } = await supabase
     .from("scheduled_automations")

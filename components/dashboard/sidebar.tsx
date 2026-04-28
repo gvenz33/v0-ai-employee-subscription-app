@@ -4,11 +4,12 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, CreditCard, BarChart3, FileText, Settings, ListTodo, Share2, Shield, Code, Coins, CalendarClock } from "lucide-react"
+import { Activity, LayoutDashboard, Users, CreditCard, BarChart3, FileText, Settings, ListTodo, Share2, Shield, Code, Coins, CalendarClock } from "lucide-react"
 import type { WhiteLabelSettings } from "@/lib/white-label"
 
 interface DashboardSidebarProps {
   isAdmin?: boolean
+  subscriptionTier?: string | null
   whiteLabel?: WhiteLabelSettings | null
 }
 
@@ -26,7 +27,11 @@ const navItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
-export function DashboardSidebar({ isAdmin = false, whiteLabel }: DashboardSidebarProps) {
+export function DashboardSidebar({
+  isAdmin = false,
+  subscriptionTier,
+  whiteLabel,
+}: DashboardSidebarProps) {
   const pathname = usePathname()
   const brandName = whiteLabel?.brand_name?.trim() || "247 AI Employees"
   const logoUrl = whiteLabel?.logo_url?.trim() || ""
@@ -55,6 +60,27 @@ export function DashboardSidebar({ isAdmin = false, whiteLabel }: DashboardSideb
       
       <nav className="flex-1 p-4">
         <ul className="space-y-1">
+          {subscriptionTier === "enterprise" ? (
+            <li key="/dashboard/operations">
+              <Link
+                href="/dashboard/operations"
+                style={
+                  pathname === "/dashboard/operations" && primaryColor
+                    ? { backgroundColor: primaryColor, color: "#ffffff" }
+                    : undefined
+                }
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-1",
+                  pathname === "/dashboard/operations"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                )}
+              >
+                <Activity className="h-5 w-5" />
+                Operations
+              </Link>
+            </li>
+          ) : null}
           {navItems.map((item) => {
             const isActive = pathname === item.href || 
               (item.href !== "/dashboard" && pathname.startsWith(item.href))

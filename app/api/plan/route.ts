@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { validateApiKey, logApiRequest } from "@/lib/api-auth"
 import { createClient } from "@/lib/supabase/server"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 import { PLANS, AI_EMPLOYEES } from "@/lib/products"
 
 export async function GET(request: Request) {
@@ -12,6 +13,12 @@ export async function GET(request: Request) {
   if (!auth.valid || !auth.data) {
     await logApiRequest(null, null, "/api/plan", "GET", 401, Date.now() - startTime, request)
     return NextResponse.json({ error: auth.error }, { status: 401 })
+  }
+
+  const guard = await guardTenantApiAccess(auth.data.user_id, request)
+  if (!guard.ok) {
+    await logApiRequest(auth.data.id, auth.data.user_id, "/api/plan", "GET", guard.status, Date.now() - startTime, request)
+    return NextResponse.json({ error: guard.message }, { status: guard.status })
   }
 
   try {

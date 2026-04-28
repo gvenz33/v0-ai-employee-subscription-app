@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { getSupabaseAdmin } from "@/lib/supabase/admin"
+import { recordAuditLog } from "@/lib/audit-log"
 import { vercelConfigured, vercelGetDomainConfig, inferDomainReady } from "@/lib/vercel-domains"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-type AdminContext = { admin: SupabaseClient } | { response: NextResponse }
+type AdminContext = { admin: SupabaseClient; staffUserId: string } | { response: NextResponse }
 
 async function requireAdmin(): Promise<AdminContext> {
   const supabase = await createClient()
@@ -25,7 +26,7 @@ async function requireAdmin(): Promise<AdminContext> {
     return { response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) }
   }
 
-  return { admin: getSupabaseAdmin() }
+  return { admin: getSupabaseAdmin(), staffUserId: user.id }
 }
 
 export async function GET() {
@@ -63,7 +64,7 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   const ctx = await requireAdmin()
   if ("response" in ctx) return ctx.response
-  const { admin } = ctx
+  const { admin, staffUserId } = ctx
 
   const body = await request.json().catch(() => ({}))
   const id = typeof body.id === "string" ? body.id : ""
@@ -99,6 +100,16 @@ export async function PATCH(request: NextRequest) {
     if (updError) {
       return NextResponse.json({ error: updError.message }, { status: 500 })
     }
+    await recordAuditLog({
+      workspaceOwnerId: row.user_id as string,
+      actorUserId: staffUserId,
+      source: "admin",
+      action: "custom_domain.admin_toggle",
+      resourceType: "user_custom_domains",
+      resourceId: row.hostname as string,
+      details: { domain_row_id: id, is_active: body.is_active, status: nextStatus },
+      request,
+    })
     return NextResponse.json({ ok: true })
   }
 
@@ -128,6 +139,17 @@ export async function PATCH(request: NextRequest) {
       updated_at: now,
     })
     .eq("id", id)
+
+  await recordAuditLog({
+    workspaceOwnerId: row.user_id as string,
+    actorUserId: staffUserId,
+    source: "admin",
+    action: "custom_domain.admin_sync",
+    resourceType: "user_custom_domains",
+    resourceId: row.hostname as string,
+    details: { domain_row_id: id, status },
+    request,
+  })
 
   return NextResponse.json({ ok: true, status })
 }

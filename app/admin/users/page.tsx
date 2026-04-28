@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Search, Plus, Edit, Shield, CreditCard, Bot, Share2 } from "lucide-react"
+import { Search, Plus, Edit, Shield, CreditCard, Bot, Share2, Ban } from "lucide-react"
 import { PLANS, AI_EMPLOYEES } from "@/lib/products"
 
 interface Profile {
@@ -21,6 +21,7 @@ interface Profile {
   subscription_tier: string
   tasks_used: number
   tasks_limit: number
+  api_access_suspended?: boolean
   is_superadmin: boolean
   is_admin: boolean
   affiliate_enabled: boolean
@@ -213,7 +214,13 @@ export default function UserManagementPage() {
                         <p className="text-sm text-foreground">{user.tasks_used} / {user.tasks_limit}</p>
                       </td>
                       <td className="p-4">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          {user.api_access_suspended && (
+                            <Badge variant="destructive">
+                              <Ban className="h-3 w-3 mr-1" />
+                              API suspended
+                            </Badge>
+                          )}
                           {user.is_superadmin && <Badge variant="outline" className="text-yellow-500 border-yellow-500"><Shield className="h-3 w-3 mr-1" />Super</Badge>}
                           {user.is_admin && <Badge variant="outline" className="text-blue-500 border-blue-500">Admin</Badge>}
                           {user.payment_override && <Badge variant="outline" className="text-green-500 border-green-500"><CreditCard className="h-3 w-3 mr-1" />Free</Badge>}
@@ -323,6 +330,19 @@ export default function UserManagementPage() {
                   <Switch
                     checked={selectedUser.affiliate_enabled}
                     onCheckedChange={(v) => setSelectedUser({ ...selectedUser, affiliate_enabled: v })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="flex items-center gap-2">
+                      <Ban className="h-4 w-4" /> Suspend API access
+                    </Label>
+                    <p className="text-xs text-muted-foreground">Blocks API and high-traffic automations for abuse response</p>
+                  </div>
+                  <Switch
+                    checked={Boolean(selectedUser.api_access_suspended)}
+                    onCheckedChange={(v) => setSelectedUser({ ...selectedUser, api_access_suspended: v })}
                   />
                 </div>
               </div>

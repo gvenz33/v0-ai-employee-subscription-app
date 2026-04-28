@@ -1,15 +1,21 @@
 import { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 import { AI_EMPLOYEES } from "@/lib/products"
 import { computeNextRunAt, parseTimeLocalHHMM } from "@/lib/compute-next-automation-run"
 import { scheduledAutomationBodySchema, tierOrder } from "@/lib/scheduled-automation-schema"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+  const guard = await guardTenantApiAccess(user.id, request)
+  if (!guard.ok) {
+    return Response.json({ error: guard.message }, { status: guard.status })
+  }
 
   const { data, error } = await supabase
     .from("scheduled_automations")
@@ -31,6 +37,11 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+  const guard = await guardTenantApiAccess(user.id, request)
+  if (!guard.ok) {
+    return Response.json({ error: guard.message }, { status: guard.status })
+  }
 
   const parsed = scheduledAutomationBodySchema.safeParse(await request.json())
   if (!parsed.success) {
