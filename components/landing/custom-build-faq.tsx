@@ -6,6 +6,36 @@ import { cn } from "@/lib/utils"
 
 const faqs: { question: string; answer: ReactNode }[] = [
   {
+    question: "What is included in discovery before we commit to full build scope?",
+    answer:
+      "Discovery maps your current process, bottlenecks, data quality, tooling, and approval paths. You get a scoped rollout plan with phases, dependencies, owner responsibilities, and a concrete definition of success for each workflow before implementation starts.",
+  },
+  {
+    question: "How do you handle revisions and change requests during the build?",
+    answer:
+      "We expect iteration. Changes are triaged by impact and slotted into the current phase or next phase so progress stays predictable. You get visibility into what is in scope now, what is queued, and what may affect timeline or pricing.",
+  },
+  {
+    question: "How do you measure ROI for a custom build?",
+    answer:
+      "We set baseline metrics early—throughput, response time, conversion, error/rework, and owner time reclaimed—then compare after launch. This keeps decisions grounded in business outcomes, not just technical output volume.",
+  },
+  {
+    question: "What happens if our process changes after launch?",
+    answer:
+      "That is normal. We design for maintainability and provide an update path for prompts, routing rules, and integrations. Post-launch support can include a tuning cadence so your automations evolve as offers, team structure, or compliance needs change.",
+  },
+  {
+    question: "Can you work alongside our internal team or agency?",
+    answer:
+      "Yes. We often collaborate with in-house operators, RevOps, engineering, and external agencies. We define ownership boundaries up front so implementation moves quickly without duplicated effort.",
+  },
+  {
+    question: "What are common reasons custom builds fail, and how do you prevent them?",
+    answer:
+      "Typical failure modes are unclear ownership, weak source data, and no acceptance criteria. We mitigate with explicit owners, staged milestones, test cases, and handoff documentation so launch quality does not depend on tribal knowledge.",
+  },
+  {
     question: "Is this the same as self-serve?",
     answer:
       "No. Self-serve is built for speed and affordability: ready-made AI Employees, templates, and workflows you adapt yourself—perfect when you want to run lean and experiment. A custom build is different: we architect automations around your real pipelines, approvals, tone, and tools. You get bespoke prompts, integrations, testing, and ongoing tuning—so outputs feel like your business, not a generic assistant. If the stakes are high enough that \"close enough\" costs you deals or time, the custom route is built for that.",

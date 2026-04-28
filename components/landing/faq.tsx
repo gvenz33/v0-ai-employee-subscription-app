@@ -7,6 +7,26 @@ import { cn } from "@/lib/utils"
 
 const faqs: { question: string; answer: ReactNode }[] = [
   {
+    question: "How does Founders (custom pricing) work?",
+    answer:
+      "Founders is a consultative tier for teams that need a tailored rollout (integrations, governance, and support depth). Pricing is quoted based on scope and expected volume, rather than a fixed public rate. Start by clicking Contact Sales on pricing; we will scope fit, timeline, and expected outcomes on a call.",
+  },
+  {
+    question: "Can Founders pricing be monthly or yearly?",
+    answer:
+      "Yes. Founders deals can be quoted monthly, yearly, or both depending on your procurement preference. We can include ramp periods, phased launches, and clear success criteria in your engagement plan before launch.",
+  },
+  {
+    question: "What is included in Founders beyond higher limits?",
+    answer:
+      "Founders includes enterprise-level reliability and support features such as operations visibility, tenant-level controls, auditability, incident communication pathways, and premium onboarding for your environment. Exact deliverables depend on your final scope and implementation plan.",
+  },
+  {
+    question: "How quickly can we start after a Founders call?",
+    answer:
+      "Most teams can start quickly once scope is agreed. We typically run a short discovery and setup phase first so integrations, guardrails, and ownership are clear before production traffic ramps.",
+  },
+  {
     question: "How secure is my data with 247 AI Employees?",
     answer:
       "Your data is encrypted at rest and in transit (AES-256 and TLS 1.3). We use Supabase with Row Level Security so users only access their own data. Payments run through Stripe (PCI DSS Level 1); we do not store card details on our servers. API access is authenticated and rate-limited. For compliance-heavy done-for-you engagements, we scope retention and access in writing.",
