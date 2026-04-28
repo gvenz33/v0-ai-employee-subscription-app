@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getSupabaseAdmin } from "@/lib/supabase/admin"
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, message } = await request.json()
+    const {
+      name,
+      email,
+      message,
+      inquiryType,
+      companyName,
+      companySize,
+      budgetRange,
+      timeline,
+    } = await request.json()
 
     if (!name || !email || !message) {
       return NextResponse.json(
@@ -11,15 +21,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Send email using a simple fetch to an email service
-    // For production, you'd use Resend, SendGrid, or similar
-    // For now, we'll store it and log it
-    
+    const normalizedType =
+      inquiryType === "founders" || inquiryType === "general" ? inquiryType : "general"
+
+    if (normalizedType === "founders") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types yet
+      await (getSupabaseAdmin() as any).from("founders_leads").insert({
+        name: String(name).trim(),
+        email: String(email).trim().toLowerCase(),
+        company_name: companyName ? String(companyName).trim() : null,
+        company_size: companySize ? String(companySize).trim() : null,
+        budget_range: budgetRange ? String(budgetRange).trim() : null,
+        timeline: timeline ? String(timeline).trim() : null,
+        message: String(message).trim(),
+        source: "contact_form",
+        status: "new",
+      })
+    }
+
     console.log("[v0] Contact form submission:", {
       to: "hello@247aiemployees.net",
       from: email,
       name,
       message,
+      inquiryType: normalizedType,
+      companyName,
+      companySize,
+      budgetRange,
+      timeline,
       timestamp: new Date().toISOString()
     })
 

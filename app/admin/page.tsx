@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, MessageSquare, DollarSign, Share2, Bot, AlertCircle } from "lucide-react"
+import { Users, MessageSquare, DollarSign, Share2, Bot, AlertCircle, Handshake } from "lucide-react"
 import Link from "next/link"
 
 export default async function AdminDashboard() {
@@ -12,11 +12,14 @@ export default async function AdminDashboard() {
     { count: activeConversations },
     { count: pendingHumanSupport },
     { count: totalAffiliates },
+    { count: foundersLeadsNew },
   ] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("support_conversations").select("*", { count: "exact", head: true }).eq("status", "active"),
     supabase.from("support_conversations").select("*", { count: "exact", head: true }).eq("needs_human", true),
     supabase.from("affiliates").select("*", { count: "exact", head: true }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
+    (supabase as any).from("founders_leads").select("*", { count: "exact", head: true }).eq("status", "new"),
   ])
 
   // Get recent support requests needing human
@@ -35,7 +38,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5 mb-8">
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
@@ -84,6 +87,19 @@ export default async function AdminDashboard() {
             <div className="text-2xl font-bold text-foreground">{totalAffiliates || 0}</div>
             <Link href="/admin/affiliates" className="text-xs text-primary hover:underline">
               Manage affiliates
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">New Founders Leads</CardTitle>
+            <Handshake className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{foundersLeadsNew || 0}</div>
+            <Link href="/admin/leads" className="text-xs text-primary hover:underline">
+              Review leads
             </Link>
           </CardContent>
         </Card>

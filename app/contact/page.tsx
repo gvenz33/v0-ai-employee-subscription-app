@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -11,9 +12,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Mail, CheckCircle } from "lucide-react"
 
 export default function ContactPage() {
+  const searchParams = useSearchParams()
+  const foundersIntent = (searchParams.get("subject") || "").toLowerCase().includes("founders")
+
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [message, setMessage] = useState("")
+  const [companyName, setCompanyName] = useState("")
+  const [companySize, setCompanySize] = useState("")
+  const [budgetRange, setBudgetRange] = useState("")
+  const [timeline, setTimeline] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,7 +35,16 @@ export default function ContactPage() {
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({
+          name,
+          email,
+          message,
+          inquiryType: foundersIntent ? "founders" : "general",
+          companyName,
+          companySize,
+          budgetRange,
+          timeline,
+        }),
       })
 
       if (!response.ok) {
@@ -123,6 +140,56 @@ export default function ContactPage() {
                     className="bg-background border-border text-foreground resize-none"
                   />
                 </div>
+                {foundersIntent && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="company-name" className="text-foreground">Company Name</Label>
+                      <Input
+                        id="company-name"
+                        type="text"
+                        placeholder="Acme Inc."
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="bg-background border-border text-foreground"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="company-size" className="text-foreground">Company Size</Label>
+                      <Input
+                        id="company-size"
+                        type="text"
+                        placeholder="e.g. 1-10, 11-50, 51-200"
+                        value={companySize}
+                        onChange={(e) => setCompanySize(e.target.value)}
+                        className="bg-background border-border text-foreground"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="budget-range" className="text-foreground">Budget Range</Label>
+                        <Input
+                          id="budget-range"
+                          type="text"
+                          placeholder="$500-$2k/mo"
+                          value={budgetRange}
+                          onChange={(e) => setBudgetRange(e.target.value)}
+                          className="bg-background border-border text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="timeline" className="text-foreground">Timeline</Label>
+                        <Input
+                          id="timeline"
+                          type="text"
+                          placeholder="This month / quarter"
+                          value={timeline}
+                          onChange={(e) => setTimeline(e.target.value)}
+                          className="bg-background border-border text-foreground"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Sending..." : "Send Message"}

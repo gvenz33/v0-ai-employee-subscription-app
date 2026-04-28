@@ -15,7 +15,8 @@ import {
   Shield,
   BookOpen,
   Globe,
-  Activity
+  Activity,
+  Handshake
 } from "lucide-react"
 
 interface AdminSidebarProps {
@@ -25,6 +26,7 @@ interface AdminSidebarProps {
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "User Management", icon: Users },
+  { href: "/admin/leads", label: "Founders Leads", icon: Handshake },
   { href: "/admin/ops", label: "Operations & SLA", icon: Activity },
   { href: "/admin/support", label: "Support Chats", icon: MessageSquare },
   { href: "/admin/knowledge-base", label: "Knowledge Base", icon: BookOpen },
