@@ -5,8 +5,8 @@ export const siteDefaultMetadata: Metadata = {
   description:
     "Deploy intelligent AI agents that automate sales, marketing, support, and more. Scale your team without the overhead. Available 24/7.",
   icons: {
-    icon: "/images/logo-transparent.png",
-    shortcut: "/images/logo-transparent.png",
-    apple: "/images/logo-transparent.png",
+    icon: "/images/app-icon-192.png",
+    shortcut: "/images/app-icon-192.png",
+    apple: "/images/apple-touch-icon.png",
   },
 }
