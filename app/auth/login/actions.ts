@@ -2,6 +2,7 @@
 
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { supabaseCookieOptions } from '@/lib/supabase/cookie-options'
 
 export type SignInResult = { error: string } | { ok: true }
 
@@ -31,6 +32,7 @@ export async function signInWithPasswordAction(formData: FormData): Promise<Sign
   const cookieStore = await cookies()
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: supabaseCookieOptions,
     cookies: {
       getAll() {
         return cookieStore.getAll()
