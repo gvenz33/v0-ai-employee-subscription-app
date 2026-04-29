@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { AdminSidebar } from "@/components/admin/sidebar"
+import { MobileAdminNav } from "@/components/admin/mobile-nav"
 
 export default async function AdminLayout({
   children,
@@ -28,9 +29,10 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen bg-background">
       <AdminSidebar isSuperAdmin={profile.is_superadmin} />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pb-24 lg:pb-0">
         {children}
       </main>
+      <MobileAdminNav />
     </div>
   )
 }

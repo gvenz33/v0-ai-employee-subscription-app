@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
+import { MobileDashboardNav } from "@/components/dashboard/mobile-nav"
 import { getEffectiveWhiteLabelSettings } from "@/lib/white-label"
 
 export const metadata: Metadata = {
@@ -37,10 +38,11 @@ export default async function DashboardLayout({
       />
       <div className="flex-1 flex flex-col">
         <DashboardHeader user={user} profile={profile} whiteLabel={whiteLabel} />
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 overflow-auto p-4 pb-24 md:p-6 md:pb-6">
           {children}
         </main>
       </div>
+      <MobileDashboardNav />
     </div>
   )
 }

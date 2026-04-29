@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { 
   DropdownMenu, 
@@ -11,9 +12,10 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { LogOut, User, Menu } from "lucide-react"
+import { LogOut, Menu, User } from "lucide-react"
 import { SUBSCRIPTION_PLANS } from "@/lib/products"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import type { WhiteLabelSettings } from "@/lib/white-label"
@@ -24,6 +26,8 @@ interface Profile {
   subscription_tier: string
   tasks_used: number
   tasks_limit: number
+  is_superadmin?: boolean
+  is_admin?: boolean
 }
 
 interface DashboardHeaderProps {
@@ -34,6 +38,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user, profile, whiteLabel }: DashboardHeaderProps) {
   const router = useRouter()
+  const isAdmin = Boolean(profile?.is_superadmin) || Boolean(profile?.is_admin)
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -51,13 +56,37 @@ export function DashboardHeader({ user, profile, whiteLabel }: DashboardHeaderPr
   const primaryColor = whiteLabel?.primary_color?.trim() || null
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
+    <header className="h-14 md:h-16 border-b border-border bg-card flex items-center justify-between px-4 md:px-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="lg:hidden">
-          <Menu className="h-5 w-5" />
-        </Button>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="lg:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[86vw] max-w-xs">
+            <SheetHeader>
+              <SheetTitle>{brandName}</SheetTitle>
+            </SheetHeader>
+            <nav className="mt-6 flex flex-col gap-1">
+              <Link href="/dashboard" className="rounded-md px-3 py-2 text-sm hover:bg-muted">Overview</Link>
+              <Link href="/dashboard/employees" className="rounded-md px-3 py-2 text-sm hover:bg-muted">AI Employees</Link>
+              <Link href="/dashboard/tasks" className="rounded-md px-3 py-2 text-sm hover:bg-muted">Task Queue</Link>
+              <Link href="/dashboard/analytics" className="rounded-md px-3 py-2 text-sm hover:bg-muted">Analytics</Link>
+              <Link href="/dashboard/billing" className="rounded-md px-3 py-2 text-sm hover:bg-muted">Billing</Link>
+              <Link href="/dashboard/settings" className="rounded-md px-3 py-2 text-sm hover:bg-muted">Settings</Link>
+              {profile?.subscription_tier === "enterprise" && (
+                <Link href="/dashboard/operations" className="rounded-md px-3 py-2 text-sm hover:bg-muted">Operations</Link>
+              )}
+              {isAdmin && (
+                <Link href="/admin" className="rounded-md px-3 py-2 text-sm hover:bg-muted">Admin Console</Link>
+              )}
+            </nav>
+          </SheetContent>
+        </Sheet>
         <p
-          className="hidden md:block text-sm font-medium text-foreground"
+          className="text-sm font-medium text-foreground"
           style={primaryColor ? { color: primaryColor } : undefined}
         >
           {brandName}
