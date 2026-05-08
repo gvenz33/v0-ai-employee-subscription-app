@@ -24,19 +24,18 @@ export function Hero() {
 
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary">
           <Clock className="h-4 w-4" />
-          <span>Your small-business AI back office</span>
+          <span>Lead follow-up autopilot for founders</span>
         </div>
 
         <h1 className="font-display text-balance text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-          Save time. Cut chaos.{" "}
+          Reply in minutes.{" "}
           <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Follow up faster
+            Book more calls.
           </span>
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
-          One platform for admin help, lead handling, inbox cleanup, content support, simple SOPs, reminders, and
-          lightweight reporting—without hiring a bigger team.
+          Turn inquiries into conversations automatically: instant replies, smart follow-ups, and a clean pipeline—so no lead slips through.
         </p>
 
         <PathChoice />
@@ -58,22 +57,22 @@ export function Hero() {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Clock className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-2xl font-bold text-foreground">Hours back</span>
-            <span className="text-sm text-muted-foreground">Every week</span>
+            <span className="text-2xl font-bold text-foreground">Faster replies</span>
+            <span className="text-sm text-muted-foreground">Within minutes</span>
           </div>
           <div className="flex flex-col items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Zap className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-2xl font-bold text-foreground">Leads &amp; follow-up</span>
-            <span className="text-sm text-muted-foreground">Less slipping through</span>
+            <span className="text-2xl font-bold text-foreground">More booked calls</span>
+            <span className="text-sm text-muted-foreground">Less ghosting</span>
           </div>
           <div className="flex flex-col items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Users className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-2xl font-bold text-foreground">30+ roles</span>
-            <span className="text-sm text-muted-foreground">Ready to deploy</span>
+            <span className="text-2xl font-bold text-foreground">Cleaner pipeline</span>
+            <span className="text-sm text-muted-foreground">Nothing slips</span>
           </div>
         </div>
       </div>
