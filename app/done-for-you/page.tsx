@@ -8,18 +8,33 @@ import { ArrowRight, Check, Hammer, Mail } from "lucide-react"
 const bookCallHref = process.env.NEXT_PUBLIC_BOOK_CALL_URL ?? "/contact"
 
 const deliverables = [
-  "Bespoke discovery: we map how work really flows—not how the slide deck says it should",
-  "Custom-built agent stack, prompts, and guardrails matched to your offers and brand voice",
-  "Deep integrations with the tools you already rely on (CRM, inbox, scheduling, and more)",
-  "Hands-on onboarding plus documentation so your team owns the system, not a black box",
-  "Ongoing tuning, monitoring, and iteration as volume, seasons, and offers change",
+  "Fast-response system: reply in minutes with AI-drafted responses (optional approval while we tune your voice)",
+  "Follow-up sequences: persistent, on-brand follow-ups so leads don’t go cold",
+  "Lead pipeline: simple stages + tags so every inquiry has a next step",
+  "Templates + guardrails: what we say, what we never say, and when to hand off to a human",
+  "Weekly optimization: short report + improvements based on real conversations",
 ]
 
 const processSteps = [
-  { title: "Fit call", detail: "We confirm scope, stakeholders, and success criteria—typically businesses with $1M+ annual revenue or equivalent operational load." },
-  { title: "Design", detail: "We map workflows, handoffs, and failure modes, then propose the agent stack and rollout plan." },
-  { title: "Build & train", detail: "We configure agents, test edge cases, and align outputs with your brand and compliance needs." },
-  { title: "Launch & handoff", detail: "We go live with your team, refine based on real usage, and set up a cadence for improvements." },
+  { title: "Fit call (15 min)", detail: "We confirm your offer, target customer, and what a ‘qualified lead’ looks like. If it’s not a fit, we’ll tell you fast." },
+  { title: "48-hour setup", detail: "We build your first-response + follow-up system and align it to your tone, rules, and handoff path." },
+  { title: "Launch + tune", detail: "We monitor early conversations, tighten the scripts, and improve conversion over the first 1–2 weeks." },
+  { title: "Scale", detail: "Once it’s working, we can connect more sources (forms/ads/CRM) and add routing, reporting, and automation." },
+]
+
+const guarantees = [
+  {
+    title: "No overpromising",
+    body: "We start with AI-drafted replies and follow-ups. You can require approval until you trust the system.",
+  },
+  {
+    title: "Fast time-to-value",
+    body: "Your initial setup goes live in 48 hours after we collect your basics (offer, FAQs, and voice examples).",
+  },
+  {
+    title: "Cancel anytime",
+    body: "If you don’t want ongoing tuning, you can stop after the setup—no long contracts.",
+  },
 ]
 
 export default function DoneForYouPage() {
@@ -31,16 +46,15 @@ export default function DoneForYouPage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary">
               <Hammer className="h-4 w-4" />
-              <span>Custom-built for how you actually work</span>
+              <span>Done-for-you lead follow-up</span>
             </div>
             <h1 className="font-display text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              A fully custom AI back office—not a template
+              Done-for-you lead follow-up that replies in minutes
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
-              We design, build, and refine automations around your pipelines, your voice, and your stack—so you get
-              outcomes that match your business, not a generic checklist. Typical fit: serious operators with roughly{" "}
-              <strong className="font-medium text-foreground">$1M+ annual revenue</strong> or heavy inbound volume where
-              off-the-shelf setups leave money on the table.
+              We install a simple, reliable system that responds fast, follows up consistently, and keeps leads moving
+              until they book. We start with AI-drafted replies (optionally human-approved) so you never overpromise—and
+              you still sound like you.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" className="gap-2 px-8" asChild>
@@ -61,9 +75,7 @@ export default function DoneForYouPage() {
 
         <section className="px-6 py-20">
           <div className="mx-auto max-w-5xl">
-            <h2 className="text-center font-display text-2xl font-bold text-foreground sm:text-3xl">
-              What a custom build includes
-            </h2>
+            <h2 className="text-center font-display text-2xl font-bold text-foreground sm:text-3xl">What you get</h2>
             <ul className="mx-auto mt-10 max-w-2xl space-y-4">
               {deliverables.map((line) => (
                 <li key={line} className="flex gap-3 text-muted-foreground">
@@ -72,6 +84,15 @@ export default function DoneForYouPage() {
                 </li>
               ))}
             </ul>
+
+            <div className="mx-auto mt-12 grid max-w-4xl gap-6 text-left md:grid-cols-3">
+              {guarantees.map((item) => (
+                <div key={item.title} className="rounded-2xl border border-border/50 bg-card p-6">
+                  <h3 className="font-display text-lg font-semibold text-foreground">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -92,35 +113,32 @@ export default function DoneForYouPage() {
 
         <section className="px-6 py-20">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">Two ways to go custom</h2>
+            <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">Two ways to get it done</h2>
             <p className="mt-4 text-muted-foreground">
-              Every engagement is quoted to your scope—integrations, compliance, and how hands-on you want us. On a call
-              we&apos;ll recommend the right build and walk through what &quot;done&quot; looks like for you.
+              Start simple and safe (AI drafts + optional approval). Then automate more as we learn what converts.
             </p>
             <div className="mt-10 grid gap-6 text-left sm:grid-cols-2">
               <div className="rounded-2xl border border-border/50 bg-card p-6">
-                <h3 className="font-display font-semibold text-foreground">Co-built (guided custom)</h3>
+                <h3 className="font-display font-semibold text-foreground">Setup only (48 hours)</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  We architect and configure a tailored stack together—you stay close to the controls while we handle the
-                  heavy lifting: workflow design, prompt engineering, and launch. Ideal when you want a custom build but
-                  your team will run day-to-day operations in-house.
+                  We install the initial lead follow-up system: first reply, follow-ups, handoff rules, and reporting.
+                  You can run it with optional approval while it learns your tone.
                 </p>
               </div>
               <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
-                <h3 className="font-display font-semibold text-foreground">Fully custom (white-glove)</h3>
+                <h3 className="font-display font-semibold text-foreground">Setup + ongoing optimization</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  We own end-to-end implementation: bespoke automations, rigorous testing, brand-true outputs, and an
-                  ongoing cadence of maintenance and improvement. Best when throughput, risk, or complexity mean you
-                  cannot afford generic templates or DIY trial-and-error.
+                  We monitor conversations, improve conversion, add routing/automation, and expand to more lead sources
+                  (forms, ads, CRM) as you scale.
                 </p>
               </div>
             </div>
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Button size="lg" asChild>
-                <Link href={bookCallHref}>Book a discovery call</Link>
+                <Link href={bookCallHref}>Book a setup call</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/#pricing">Browse self-serve (DIY) plans</Link>
+                <Link href="/#pricing">Prefer DIY? Start free trial</Link>
               </Button>
             </div>
           </div>
