@@ -5,7 +5,7 @@ import { CustomBuildFaq } from "@/components/landing/custom-build-faq"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Check, Hammer, Mail } from "lucide-react"
 
-const bookCallHref = process.env.NEXT_PUBLIC_BOOK_CALL_URL ?? "/contact"
+const bookCallHref = process.env.NEXT_PUBLIC_BOOK_CALL_URL ?? "https://calendar.app.google/4VNLx1krhteqwXJB8"
 
 const deliverables = [
   "Fast-response system: reply in minutes with AI-drafted responses (optional approval while we tune your voice)",
