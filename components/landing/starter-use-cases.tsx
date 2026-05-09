@@ -6,17 +6,21 @@ const cases = [
   {
     icon: MessageSquare,
     title: "Lead follow-up",
-    bullets: ["Respond faster to inquiries", "Draft follow-ups that sound human", "Keep momentum on warm leads"],
-  },
-  {
-    icon: Megaphone,
-    title: "Content repurposing",
-    bullets: ["Turn one recording into posts and emails", "Adapt tone for each channel", "Ship more without starting from zero"],
+    bullets: [
+      "Reply in minutes (even when youre busy)",
+      "Draft follow-ups that sound human",
+      "Keep momentum until they book",
+    ],
   },
   {
     icon: Inbox,
     title: "Inbox + task triage",
     bullets: ["Sort what matters first", "Turn threads into clear next steps", "Pair with your task queue for execution"],
+  },
+  {
+    icon: Megaphone,
+    title: "Content repurposing",
+    bullets: ["Turn one recording into posts and emails", "Adapt tone for each channel", "Ship more without starting from zero"],
   },
 ] as const
 
