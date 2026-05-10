@@ -46,36 +46,41 @@ export default function DoneForYouPage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary">
               <Hammer className="h-4 w-4" />
-              <span>Done-for-you lead follow-up</span>
+              <span>Agency reseller program</span>
             </div>
             <h1 className="font-display text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              Done-for-you lead follow-up that replies in minutes
+              White-label AI lead follow-up you can sell to clients
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
-              We install a simple, reliable system that responds fast, follows up consistently, and keeps leads moving
-              until they book. We start with AI-drafted replies (optionally human-approved) so you never overpromise—and
-              you still sound like you.
+              Stop losing leads your clients already paid for. We install fast-response + follow-up systems that reply in
+              minutes, stay on-brand, and keep prospects moving until they book—starting with AI drafts and optional
+              approval so you never overpromise.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" className="gap-2 px-8" asChild>
                 <Link href={bookCallHref}>
-                  Book a discovery call
+                  Book a reseller call
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="gap-2 px-8" asChild>
-                <a href="mailto:hello@247aiemployees.net?subject=Done-for-you%20inquiry">
+                <a href="mailto:hello@247aiemployees.net?subject=Agency%20reseller%20inquiry">
                   <Mail className="h-4 w-4" />
                   Email us
                 </a>
               </Button>
             </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              You keep the client relationship. You set your pricing. We deliver the system.
+            </p>
           </div>
         </section>
 
         <section className="px-6 py-20">
           <div className="mx-auto max-w-5xl">
-            <h2 className="text-center font-display text-2xl font-bold text-foreground sm:text-3xl">What you get</h2>
+            <h2 className="text-center font-display text-2xl font-bold text-foreground sm:text-3xl">
+              What your clients get (and you deliver)
+            </h2>
             <ul className="mx-auto mt-10 max-w-2xl space-y-4">
               {deliverables.map((line) => (
                 <li key={line} className="flex gap-3 text-muted-foreground">
@@ -92,6 +97,31 @@ export default function DoneForYouPage() {
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
                 </div>
               ))}
+            </div>
+
+            <div className="mx-auto mt-12 max-w-4xl rounded-2xl border border-primary/20 bg-primary/5 p-8">
+              <h3 className="font-display text-xl font-semibold text-foreground">Your margin</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                We charge the agency. You set the client price. Most agencies position this as a “lead response + follow
+                up system” and mark it up as a setup fee plus monthly management.
+              </p>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="rounded-xl border border-border/50 bg-card p-5">
+                  <p className="text-sm font-semibold text-foreground">Suggested client price</p>
+                  <p className="mt-2 text-2xl font-bold text-foreground">$1.5k–$3k</p>
+                  <p className="mt-1 text-sm text-muted-foreground">setup (one-time)</p>
+                </div>
+                <div className="rounded-xl border border-border/50 bg-card p-5">
+                  <p className="text-sm font-semibold text-foreground">Suggested monthly</p>
+                  <p className="mt-2 text-2xl font-bold text-foreground">$500–$1k</p>
+                  <p className="mt-1 text-sm text-muted-foreground">per client</p>
+                </div>
+                <div className="rounded-xl border border-border/50 bg-card p-5">
+                  <p className="text-sm font-semibold text-foreground">What you sell</p>
+                  <p className="mt-2 text-2xl font-bold text-foreground">Speed + follow-up</p>
+                  <p className="mt-1 text-sm text-muted-foreground">from existing leads</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -113,32 +143,45 @@ export default function DoneForYouPage() {
 
         <section className="px-6 py-20">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">Two ways to get it done</h2>
+            <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">Reseller packages</h2>
             <p className="mt-4 text-muted-foreground">
-              Start simple and safe (AI drafts + optional approval). Then automate more as we learn what converts.
+              Start with 1–3 clients, then scale as you standardize your onboarding.
             </p>
+
             <div className="mt-10 grid gap-6 text-left sm:grid-cols-2">
               <div className="rounded-2xl border border-border/50 bg-card p-6">
-                <h3 className="font-display font-semibold text-foreground">Setup only (48 hours)</h3>
+                <h3 className="font-display text-lg font-semibold text-foreground">Reseller Starter</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  We install the initial lead follow-up system: first reply, follow-ups, handoff rules, and reporting.
-                  You can run it with optional approval while it learns your tone.
+                  Perfect for agencies installing this for their first few clients. We help you deliver the system quickly
+                  and safely.
                 </p>
+                <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                  <li>• 48-hour setup per client</li>
+                  <li>• AI drafts + optional approval</li>
+                  <li>• Follow-up sequences + handoff rules</li>
+                  <li>• 2 weeks of tuning</li>
+                </ul>
               </div>
               <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
-                <h3 className="font-display font-semibold text-foreground">Setup + ongoing optimization</h3>
+                <h3 className="font-display text-lg font-semibold text-foreground">Reseller Scale</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  We monitor conversations, improve conversion, add routing/automation, and expand to more lead sources
-                  (forms, ads, CRM) as you scale.
+                  Best once you’re onboarding 5+ clients and want more standardization, reporting, and faster delivery.
                 </p>
+                <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                  <li>• Faster onboarding playbook</li>
+                  <li>• Monthly performance report per client</li>
+                  <li>• Priority support</li>
+                  <li>• Add lead sources (forms/ads/CRM) as you grow</li>
+                </ul>
               </div>
             </div>
+
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Button size="lg" asChild>
-                <Link href={bookCallHref}>Book a setup call</Link>
+                <Link href={bookCallHref}>Book a reseller call</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/#pricing">Prefer DIY? Start free trial</Link>
+                <Link href="/#pricing">Not an agency? Start free trial</Link>
               </Button>
             </div>
           </div>
