@@ -7,11 +7,12 @@ import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Settings, Users, DollarSign, Shield, Save, Loader2 } from "lucide-react"
+import { Settings, Users, DollarSign, Shield, Save, Loader2, MessageSquare } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
 interface AdminSettings {
+  support_chat_enabled: boolean
   affiliate_program_enabled: boolean
   max_commission_rate: number
   default_trial_days: number
@@ -23,6 +24,7 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState<AdminSettings>({
+    support_chat_enabled: true,
     affiliate_program_enabled: true,
     max_commission_rate: 20,
     default_trial_days: 0,
@@ -40,17 +42,14 @@ export default function AdminSettingsPage() {
     async function fetchData() {
       const supabase = createClient()
       
-      // Fetch user count
       const { count: userCount } = await supabase
         .from("profiles")
         .select("*", { count: "exact", head: true })
       
-      // Fetch affiliate count
       const { count: affiliateCount } = await supabase
         .from("affiliates")
         .select("*", { count: "exact", head: true })
 
-      // Fetch affiliate stats
       const { data: affiliateData } = await supabase
         .from("affiliates")
         .select("total_earnings_cents, pending_earnings_cents")
@@ -71,6 +70,17 @@ export default function AdminSettingsPage() {
         pendingPayouts: pendingPayouts
       })
 
+      const platformRes = await fetch("/api/admin/platform-settings")
+      if (platformRes.ok) {
+        const platformBody = await platformRes.json()
+        if (typeof platformBody.settings?.support_chat_enabled === "boolean") {
+          setSettings((prev) => ({
+            ...prev,
+            support_chat_enabled: platformBody.settings.support_chat_enabled,
+          }))
+        }
+      }
+
       setLoading(false)
     }
     fetchData()
@@ -78,9 +88,23 @@ export default function AdminSettingsPage() {
 
   async function handleSave() {
     setSaving(true)
-    // In a real app, you'd save these to a settings table
-    toast.success("Settings saved successfully")
-    setSaving(false)
+    try {
+      const res = await fetch("/api/admin/platform-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ support_chat_enabled: settings.support_chat_enabled }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(body.error || "Failed to save support chat setting")
+        return
+      }
+      toast.success("Settings saved successfully")
+    } catch {
+      toast.error("Failed to save settings")
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading) {
@@ -92,7 +116,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-8">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Admin Settings</h1>
         <p className="text-muted-foreground">Configure global platform settings</p>
@@ -156,6 +180,34 @@ export default function AdminSettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Support chatbot
+          </CardTitle>
+          <CardDescription>
+            Control the AI support widget on public pages. White-label sites that remove 247 branding never show the widget.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-foreground">Enable support chatbot</p>
+              <p className="text-sm text-muted-foreground">
+                When off, the chat bubble is hidden and the support chat API returns unavailable.
+              </p>
+            </div>
+            <Switch
+              checked={settings.support_chat_enabled}
+              onCheckedChange={(checked) =>
+                setSettings({ ...settings, support_chat_enabled: checked })
+              }
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="bg-card border-border">
         <CardHeader>

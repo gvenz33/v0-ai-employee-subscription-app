@@ -1,6 +1,7 @@
 import "server-only"
 
 import { createClient } from "@/lib/supabase/server"
+import { isSupportChatEnabled } from "@/lib/platform-settings-server"
 
 export type BrandedPublicContext = {
   user_id: string
@@ -69,6 +70,8 @@ export async function getBrandedPublicContextForHost(host: string): Promise<Bran
 }
 
 export async function shouldShowSupportChatWidget(): Promise<boolean> {
+  if (!(await isSupportChatEnabled())) return false
+
   const { headers } = await import("next/headers")
   const h = await headers()
   const host = (h.get("x-forwarded-host") || h.get("host") || "").trim()

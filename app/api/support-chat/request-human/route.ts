@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdmin } from "@/lib/supabase/admin"
+import { isSupportChatEnabled } from "@/lib/platform-settings-server"
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await isSupportChatEnabled())) {
+      return NextResponse.json({ error: "Support chat is currently unavailable" }, { status: 503 })
+    }
+
     const { sessionId } = await request.json()
 
     // Update conversation to needs_human

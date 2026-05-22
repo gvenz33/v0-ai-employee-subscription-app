@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { streamText, convertToModelMessages } from "ai"
 import { getSupabaseAdmin } from "@/lib/supabase/admin"
+import { isSupportChatEnabled } from "@/lib/platform-settings-server"
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await isSupportChatEnabled())) {
+      return NextResponse.json(
+        { error: "Support chat is currently unavailable", response: "Support chat is temporarily unavailable. Please email hello@247aiemployees.net." },
+        { status: 503 },
+      )
+    }
+
     const { message, sessionId, history } = await request.json()
 
     // Check if user is requesting human support
