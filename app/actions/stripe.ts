@@ -13,8 +13,22 @@ import {
   tierMayPurchaseAlaCarte,
   canAccessEmployee,
 } from '@/lib/products'
+import { isBetaEligiblePlanId, BETA_PROMO_CODE } from '@/lib/beta'
+import { resolvePromoForCheckout } from '@/lib/promo-codes-server'
+import type { PromoCodeRow } from '@/lib/promo-codes'
 
-export async function createCheckoutSession(planId: string, interval: 'month' | 'year' = 'month') {
+export type CreateCheckoutSessionOptions = {
+  /** User completed beta pre-checkout acknowledgment; annual + pro-tier only. */
+  betaEnrollment?: boolean
+  /** Promo code string (e.g. BETA); validated against promo_codes table. */
+  promoCode?: string
+}
+
+export async function createCheckoutSession(
+  planId: string,
+  interval: 'month' | 'year' = 'month',
+  options: CreateCheckoutSessionOptions = {},
+) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -30,10 +44,52 @@ export async function createCheckoutSession(planId: string, interval: 'month' | 
     throw new Error('Founders plan is sold via consultation only. Please contact sales.')
   }
 
+  const { betaEnrollment = false, promoCode: promoCodeInput } = options
+  const promoCodeToApply =
+    promoCodeInput?.trim() ||
+    (betaEnrollment ? BETA_PROMO_CODE : undefined)
+
+  if (betaEnrollment) {
+    if (!isBetaEligiblePlanId(planId)) {
+      throw new Error('Beta pricing applies to Entrepreneur and Business annual plans only')
+    }
+    if (interval !== 'year') {
+      throw new Error('Beta subscriptions require annual billing')
+    }
+  }
+
   const priceInCents = getPriceInCents(planId, interval)
   if (priceInCents === 0) {
     throw new Error('Cannot checkout for free plan')
   }
+
+  let appliedPromo: PromoCodeRow | null = null
+
+  if (promoCodeToApply) {
+    const promoResolved = await resolvePromoForCheckout(promoCodeToApply, {
+      planId,
+      interval,
+      betaEnrollment,
+    })
+    if (!promoResolved.ok) {
+      const envFallback = betaEnrollment && process.env.STRIPE_BETA_COUPON_ID?.trim()
+      if (!envFallback) {
+        throw new Error(promoResolved.error)
+      }
+    } else {
+      appliedPromo = promoResolved.promo
+    }
+  }
+
+  let stripeCouponId = appliedPromo?.stripe_coupon_id?.trim()
+
+  if (betaEnrollment && !stripeCouponId) {
+    stripeCouponId = process.env.STRIPE_BETA_COUPON_ID?.trim()
+  }
+
+  const sessionDiscounts = stripeCouponId ? [{ coupon: stripeCouponId }] : undefined
+  const allowPromotionCodes =
+    Boolean(promoCodeToApply) && !stripeCouponId
 
   // Get or create stripe customer
   const { data: profile } = await supabase
@@ -63,6 +119,8 @@ export async function createCheckoutSession(planId: string, interval: 'month' | 
     customer: customerId,
     mode: 'subscription',
     payment_method_types: ['card'],
+    ...(sessionDiscounts ? { discounts: sessionDiscounts } : {}),
+    ...(allowPromotionCodes ? { allow_promotion_codes: true } : {}),
     line_items: [
       {
         price_data: {
@@ -86,7 +144,10 @@ export async function createCheckoutSession(planId: string, interval: 'month' | 
     metadata: {
       user_id: user.id,
       plan_id: planId,
-      billing_interval: interval
+      billing_interval: interval,
+      beta_enrollment: betaEnrollment ? 'true' : 'false',
+      promo_code_id: appliedPromo?.id ?? '',
+      promo_code: appliedPromo?.code ?? promoCodeToApply ?? '',
     },
     ui_mode: 'embedded',
     return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/billing?session_id={CHECKOUT_SESSION_ID}`

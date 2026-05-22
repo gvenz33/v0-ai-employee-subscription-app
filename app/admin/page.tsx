@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, MessageSquare, DollarSign, Share2, Bot, AlertCircle, Handshake } from "lucide-react"
+import { Users, MessageSquare, DollarSign, Share2, Bot, AlertCircle, Handshake, TicketPercent } from "lucide-react"
 import Link from "next/link"
 
 export default async function AdminDashboard() {
@@ -138,7 +138,7 @@ export default async function AdminDashboard() {
       )}
 
       {/* Quick Actions */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Link href="/admin/users">
           <Card className="bg-card border-border hover:border-primary transition-colors cursor-pointer">
             <CardContent className="pt-6">
@@ -181,6 +181,22 @@ export default async function AdminDashboard() {
                 <div>
                   <h3 className="font-semibold text-foreground">Affiliate Program</h3>
                   <p className="text-sm text-muted-foreground">Manage commissions and payouts</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/promo-codes">
+          <Card className="bg-card border-border hover:border-primary transition-colors cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-lg bg-primary/10">
+                  <TicketPercent className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Promo Codes</h3>
+                  <p className="text-sm text-muted-foreground">Discounts, schedules, and Stripe sync</p>
                 </div>
               </div>
             </CardContent>

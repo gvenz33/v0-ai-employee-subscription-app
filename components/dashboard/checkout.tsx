@@ -17,15 +17,26 @@ interface CheckoutProps {
   planId: string
   planName: string
   interval?: 'month' | 'year'
+  /** User acknowledged beta terms; server applies BETA discount rules. */
+  betaEnrollment?: boolean
+  /** Promo code applied at checkout (e.g. BETA). */
+  promoCode?: string
   onClose: () => void
 }
 
-export function Checkout({ planId, planName, interval = 'month', onClose }: CheckoutProps) {
+export function Checkout({
+  planId,
+  planName,
+  interval = 'month',
+  betaEnrollment = false,
+  promoCode,
+  onClose,
+}: CheckoutProps) {
   const [error, setError] = useState<string | null>(null)
 
   const fetchClientSecret = useCallback(async () => {
     try {
-      const result = await createCheckoutSession(planId, interval)
+      const result = await createCheckoutSession(planId, interval, { betaEnrollment, promoCode })
       if (!result.clientSecret) {
         throw new Error('Failed to create checkout session')
       }
@@ -34,7 +45,7 @@ export function Checkout({ planId, planName, interval = 'month', onClose }: Chec
       setError(err instanceof Error ? err.message : 'An error occurred')
       throw err
     }
-  }, [planId, interval])
+  }, [planId, interval, betaEnrollment, promoCode])
 
   const options = { fetchClientSecret }
 
@@ -62,6 +73,12 @@ export function Checkout({ planId, planName, interval = 'month', onClose }: Chec
             <CardTitle>Subscribe to {planName}</CardTitle>
             <CardDescription>
               {interval === 'year' ? 'Annual billing (2 months free)' : 'Monthly billing'}
+              {betaEnrollment ? (
+                <span className="mt-2 block text-xs text-muted-foreground">
+                  Beta checkout: enter promotion code <strong>BETA</strong> if the discount field appears. If your
+                  team auto-applies the coupon, you may not need to enter a code.
+                </span>
+              ) : null}
             </CardDescription>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>

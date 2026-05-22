@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { SupportChatWidget } from "@/components/support-chat-widget"
+import { BetaPromoPopup } from "@/components/beta/beta-promo-popup"
 import { shouldShowSupportChatWidget } from "@/lib/branded-public"
 import { siteDefaultMetadata } from "@/lib/site-metadata"
 import "./globals.css"
@@ -38,6 +39,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <BetaPromoPopup />
           {showSupport ? <SupportChatWidget /> : null}
           <Toaster />
         </ThemeProvider>

@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Check, CreditCard, Download, ExternalLink, AlertCircle } from 'lucide-react'
 import { isFoundersPlan, PLANS, getAnnualSavings } from '@/lib/products'
+import { isBetaEligiblePlanId, BETA_PROMO_CODE } from '@/lib/beta'
 import { Checkout } from '@/components/dashboard/checkout'
+import { BetaPreCheckoutDialog } from '@/components/beta/beta-pre-checkout-dialog'
 import { createBillingPortalSession, getInvoices } from '@/app/actions/stripe'
 import { createClient } from '@/lib/supabase/client'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -30,7 +32,13 @@ export default function BillingPage() {
   const success = searchParams.get('success')
   const canceled = searchParams.get('canceled')
   
-  const [selectedPlan, setSelectedPlan] = useState<{ id: string; interval: 'month' | 'year' } | null>(null)
+  const [selectedPlan, setSelectedPlan] = useState<{
+    id: string
+    interval: 'month' | 'year'
+    betaEnrollment?: boolean
+    promoCode?: string
+  } | null>(null)
+  const [betaGatePlan, setBetaGatePlan] = useState<{ id: string; name: string } | null>(null)
   const [currentTier, setCurrentTier] = useState<string>('personal')
   const [customMonthlyCents, setCustomMonthlyCents] = useState<number | null>(null)
   const [customYearlyCents, setCustomYearlyCents] = useState<number | null>(null)
@@ -283,7 +291,13 @@ export default function BillingPage() {
                   ) : isUpgrade ? (
                     <Button 
                       className="w-full" 
-                      onClick={() => setSelectedPlan({ id: plan.id, interval: billingInterval })}
+                      onClick={() => {
+                        if (isBetaEligiblePlanId(plan.id) && billingInterval === 'year') {
+                          setBetaGatePlan({ id: plan.id, name: plan.name })
+                          return
+                        }
+                        setSelectedPlan({ id: plan.id, interval: billingInterval, betaEnrollment: false })
+                      }}
                     >
                       Upgrade to {plan.name}
                     </Button>
@@ -359,11 +373,38 @@ export default function BillingPage() {
         </CardContent>
       </Card>
 
+      <BetaPreCheckoutDialog
+        open={betaGatePlan !== null}
+        onOpenChange={(open) => {
+          if (!open) setBetaGatePlan(null)
+        }}
+        planName={betaGatePlan?.name ?? ''}
+        onConfirmBeta={() => {
+          if (!betaGatePlan) return
+          setSelectedPlan({
+            id: betaGatePlan.id,
+            interval: 'year',
+            betaEnrollment: true,
+            promoCode: BETA_PROMO_CODE,
+          })
+        }}
+        onConfirmFullPrice={() => {
+          if (!betaGatePlan) return
+          setSelectedPlan({
+            id: betaGatePlan.id,
+            interval: 'year',
+            betaEnrollment: false,
+          })
+        }}
+      />
+
       {/* Checkout Modal */}
       {selectedPlan && (
         <Checkout
           planId={selectedPlan.id}
           interval={selectedPlan.interval}
+          betaEnrollment={selectedPlan.betaEnrollment ?? false}
+          promoCode={selectedPlan.promoCode}
           planName={PLANS.find(p => p.id === selectedPlan.id)?.name || ''}
           onClose={() => setSelectedPlan(null)}
         />

@@ -1,6 +1,7 @@
 import { getStripe } from '@/lib/stripe'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { getTaskLimitForPlanId, inferPlanIdFromStripeUnitAmount } from '@/lib/products'
+import { incrementPromoRedemption } from '@/lib/promo-codes-server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 
@@ -101,6 +102,11 @@ export async function POST(req: Request) {
             updated_at: new Date().toISOString()
           })
           .eq('id', userId)
+
+        const promoCodeId = session.metadata?.promo_code_id?.trim()
+        if (promoCodeId) {
+          await incrementPromoRedemption(promoCodeId)
+        }
       }
       break
     }

@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Activity, LayoutDashboard, Settings, Users } from "lucide-react"
+import { Activity, LayoutDashboard, Settings, TicketPercent, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const adminMobileItems = [
   { href: "/admin", label: "Home", icon: LayoutDashboard },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/promo-codes", label: "Promos", icon: TicketPercent },
   { href: "/admin/leads", label: "Leads", icon: Activity },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
@@ -17,7 +18,7 @@ export function MobileAdminNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur lg:hidden">
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {adminMobileItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
           return (

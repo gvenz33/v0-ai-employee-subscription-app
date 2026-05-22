@@ -16,7 +16,8 @@ import {
   BookOpen,
   Globe,
   Activity,
-  Handshake
+  Handshake,
+  TicketPercent,
 } from "lucide-react"
 
 interface AdminSidebarProps {
@@ -32,6 +33,7 @@ const navItems = [
   { href: "/admin/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { href: "/admin/domains", label: "Custom Domains", icon: Globe },
   { href: "/admin/affiliates", label: "Affiliates", icon: Share2 },
+  { href: "/admin/promo-codes", label: "Promo Codes", icon: TicketPercent },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
 
