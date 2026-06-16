@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -29,7 +28,7 @@ const faqs: { question: string; answer: ReactNode }[] = [
   {
     question: "How secure is my data with 247 AI Employees?",
     answer:
-      "Your data is encrypted at rest and in transit (AES-256 and TLS 1.3). We use Supabase with Row Level Security so users only access their own data. Payments run through Stripe (PCI DSS Level 1); we do not store card details on our servers. API access is authenticated and rate-limited. For compliance-heavy done-for-you engagements, we scope retention and access in writing.",
+      "Your data is encrypted at rest and in transit (AES-256 and TLS 1.3). We use Supabase with Row Level Security so users only access their own data. Payments run through Stripe (PCI DSS Level 1); we do not store card details on our servers. API access is authenticated and rate-limited. For Founders and enterprise engagements, we scope retention and access in writing.",
   },
   {
     question: "What are AI Employees and how do they work?",
@@ -63,17 +62,8 @@ const faqs: { question: string; answer: ReactNode }[] = [
   },
   {
     question: "Can I use 247 AI Employees for my team or business?",
-    answer: (
-      <>
-        Yes. Most teams start with a self-serve plan—pick the tier that matches task volume and how many AI Employees
-        you need. If you want us to design workflows, implement integrations, and maintain the stack for you (common when
-        revenue and complexity are high), see{" "}
-        <Link href="/done-for-you" className="font-medium text-primary underline-offset-4 hover:underline">
-          done for you
-        </Link>
-        .
-      </>
-    ),
+    answer:
+      "Yes. Most teams start with a self-serve plan—pick the tier that matches task volume and how many AI Employees you need. For larger rollouts with custom pricing, integrations, and dedicated support, see the Founders tier on pricing and contact sales.",
   },
 ]
 

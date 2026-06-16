@@ -39,9 +39,6 @@ export function Navbar() {
           <a href="/#pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Pricing
           </a>
-          <Link href="/done-for-you" className="text-sm font-medium text-foreground transition-colors hover:text-primary">
-            Done for you
-          </Link>
           <Link href="/contact" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Contact Us
           </Link>
@@ -72,7 +69,6 @@ export function Navbar() {
             <a href="/#starter" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Starters</a>
             <a href="/#agents" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>AI Employees</a>
             <a href="/#pricing" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Pricing</a>
-            <Link href="/done-for-you" className="text-sm font-medium text-foreground" onClick={() => setMobileOpen(false)}>Done for you</Link>
             <Link href="/contact" className="text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Contact Us</Link>
             <div className="flex flex-col gap-2 pt-2">
               <Link href="/auth/login" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-center")}>

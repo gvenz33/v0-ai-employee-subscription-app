@@ -48,8 +48,8 @@ export function Features() {
             A back office that runs lean
           </h2>
           <p className="mt-4 text-pretty text-lg text-muted-foreground">
-            Self-serve gives you proven templates and workflows to run lean. A custom build is engineered around your
-            business—different level of fit and hands-on work. Pick the path that matches how you operate.
+            Self-serve templates and workflows built for lean operators—respond faster, follow up consistently, and keep
+            your pipeline organized without hiring a back office.
           </p>
         </div>
 

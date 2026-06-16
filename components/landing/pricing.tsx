@@ -27,13 +27,6 @@ export function Pricing() {
             Pick a monthly tier and start with templates and workflows in minutes. Save about two months with annual
             billing.
           </p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Want implementation and ongoing maintenance instead?{" "}
-            <Link href="/done-for-you" className="font-medium text-primary underline-offset-4 hover:underline">
-              See done-for-you
-            </Link>
-            .
-          </p>
         </div>
 
         {/* Billing Toggle */}
