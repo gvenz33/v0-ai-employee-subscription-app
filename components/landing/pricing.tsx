@@ -25,7 +25,7 @@ export function Pricing() {
           </h2>
           <p className="mt-4 text-pretty text-lg text-muted-foreground">
             Pick a monthly tier and start with templates and workflows in minutes. Save about two months with annual
-            billing.
+            billing. Need a tailored rollout? See Founders (custom pricing) on the right.
           </p>
         </div>
 

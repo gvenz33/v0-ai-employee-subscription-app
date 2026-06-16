@@ -1,6 +1,7 @@
 import Image from "next/image"
-import { Users, Zap, Clock } from "lucide-react"
+import { Bot, Clock, Sparkles } from "lucide-react"
 import { PathChoice } from "@/components/landing/path-choice"
+import { AI_EMPLOYEE_COUNT } from "@/lib/products"
 
 export function Hero() {
   return (
@@ -23,33 +24,32 @@ export function Hero() {
         </div>
 
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary">
-          <Clock className="h-4 w-4" />
-          <span>Lead follow-up autopilot for founders</span>
+          <Sparkles className="h-4 w-4" />
+          <span>Your lean AI back office</span>
         </div>
 
         <h1 className="font-display text-balance text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-          Reply in minutes.{" "}
+          AI Employees that handle the work{" "}
           <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Book more calls.
+            you keep putting off.
           </span>
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
-          Turn inquiries into conversations automatically: instant replies, smart follow-ups, and a clean pipeline—so no lead slips through.
+          Start with lead follow-up, inbox triage, or content—then add more agents as you grow. Templates, task queue,
+          and automations included.
         </p>
 
         <PathChoice />
 
         <p className="mt-10 text-sm text-muted-foreground">
-          Want the full roster first?{" "}
           <a href="/#agents" className="font-medium text-primary underline-offset-4 hover:underline">
-            Browse all AI Employees
+            See all {AI_EMPLOYEE_COUNT} AI Employees
           </a>{" "}
-          or{" "}
+          ·{" "}
           <a href="/#pricing" className="font-medium text-primary underline-offset-4 hover:underline">
-            see self-serve pricing
+            Compare plans
           </a>
-          .
         </p>
 
         <div className="mx-auto mt-16 grid max-w-xl grid-cols-3 gap-8">
@@ -57,22 +57,22 @@ export function Hero() {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Clock className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-2xl font-bold text-foreground">Faster replies</span>
-            <span className="text-sm text-muted-foreground">Within minutes</span>
+            <span className="text-2xl font-bold text-foreground">24/7 execution</span>
+            <span className="text-sm text-muted-foreground">Tasks run in the background</span>
           </div>
           <div className="flex flex-col items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Zap className="h-5 w-5 text-primary" />
+              <Bot className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-2xl font-bold text-foreground">More booked calls</span>
-            <span className="text-sm text-muted-foreground">Less ghosting</span>
+            <span className="text-2xl font-bold text-foreground">{AI_EMPLOYEE_COUNT} specialists</span>
+            <span className="text-sm text-muted-foreground">Sales, ops, content, and more</span>
           </div>
           <div className="flex flex-col items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Users className="h-5 w-5 text-primary" />
+              <Sparkles className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-2xl font-bold text-foreground">Cleaner pipeline</span>
-            <span className="text-sm text-muted-foreground">Nothing slips</span>
+            <span className="text-2xl font-bold text-foreground">Start in minutes</span>
+            <span className="text-sm text-muted-foreground">Templates, not blank slates</span>
           </div>
         </div>
       </div>

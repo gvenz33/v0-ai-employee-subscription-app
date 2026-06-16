@@ -1,22 +1,23 @@
 import Link from "next/link"
-import { ArrowRight, Clock, MessageSquare, CalendarCheck2 } from "lucide-react"
+import { ArrowRight, Bot, Sparkles, Workflow } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const steps = [
   {
-    icon: MessageSquare,
-    title: "1) Capture the lead",
-    description: "Forward your contact form + inbox replies into one place so every inquiry is tracked.",
+    icon: Sparkles,
+    title: "1) Pick a starter",
+    description:
+      "Lead follow-up, inbox triage, or content repurposing—choose one concrete workflow to launch this week.",
   },
   {
-    icon: Clock,
-    title: "2) Reply + follow up automatically",
-    description: "Send fast first responses and smart follow-ups that sound human so momentum never dies.",
+    icon: Bot,
+    title: "2) Deploy an AI Employee",
+    description: "Use templates to get moving fast, then tune tone, rules, and handoffs in minutes.",
   },
   {
-    icon: CalendarCheck2,
-    title: "3) Turn replies into booked calls",
-    description: "Keep conversations moving until they bookor you explicitly mark them as lost.",
+    icon: Workflow,
+    title: "3) Run it on autopilot",
+    description: "Task queue, webhooks, and scheduled runs keep work moving while you focus on higher-leverage tasks.",
   },
 ] as const
 
@@ -25,9 +26,11 @@ export function HowItWorks() {
     <section id="how" className="px-6 py-24">
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-balance text-3xl font-bold text-foreground sm:text-4xl">How it works</h2>
+          <h2 className="font-display text-balance text-3xl font-bold text-foreground sm:text-4xl">
+            How your first workflow runs
+          </h2>
           <p className="mt-4 text-pretty text-lg text-muted-foreground">
-            A simple system that keeps follow-ups consistent, fast, and on-brand.
+            A simple path from starter template to background execution—no engineering team required.
           </p>
         </div>
 

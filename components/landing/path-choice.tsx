@@ -9,9 +9,9 @@ export function PathChoice() {
         <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
           <Sparkles className="h-5 w-5 text-primary" />
         </div>
-        <h2 className="font-display text-lg font-semibold text-foreground">Start self-serve</h2>
+        <h2 className="font-display text-lg font-semibold text-foreground">Start free trial</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Templates, starter automations, and one-click workflows. Run lean, move fast, stay in control.
+          Pick a starter workflow, deploy an AI Employee in minutes, and run it from your dashboard.
         </p>
         <div className="mt-6 flex flex-col gap-2">
           <Button className="w-full gap-2" asChild>

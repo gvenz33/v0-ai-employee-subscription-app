@@ -6,6 +6,46 @@ import { cn } from "@/lib/utils"
 
 const faqs: { question: string; answer: ReactNode }[] = [
   {
+    question: "What are AI Employees and how do they work?",
+    answer:
+      "AI Employees are intelligent agents powered by advanced language models like ChatGPT. Each AI Employee is specialized for a specific role - such as Sales, Marketing, Customer Support, or Data Analysis. You can interact with them via chat, or automate them using webhooks and scheduled tasks. They learn from your instructions and can handle repetitive tasks 24/7 without breaks.",
+  },
+  {
+    question: "How secure is my data with 247 AI Employees?",
+    answer:
+      "Your data is encrypted at rest and in transit (AES-256 and TLS 1.3). We use Supabase with Row Level Security so users only access their own data. Payments run through Stripe (PCI DSS Level 1); we do not store card details on our servers. API access is authenticated and rate-limited. For Founders and enterprise engagements, we scope retention and access in writing.",
+  },
+  {
+    question: "Can I upgrade or downgrade my plan at any time?",
+    answer:
+      "Yes, you can change your subscription plan at any time. When you upgrade, you get immediate access to additional AI Employees and higher task limits. If you downgrade, the change takes effect at the start of your next billing cycle. Any unused tasks do not roll over to the next month.",
+  },
+  {
+    question: "What happens if I exceed my monthly task limit?",
+    answer:
+      "When you reach your monthly task limit, you can buy Token Packs in the dashboard: Boost Pack (50 tasks, about $14.99), Power Pack (150 tasks, about $39.99), or Scale Pack (500 tasks, about $99.99). Credits apply immediately and do not expire. You can also upgrade your subscription for a higher monthly allowance and more AI Employees. We notify you at 80% and 100% of usage.",
+  },
+  {
+    question: "Can I access premium AI Employees without upgrading my full plan?",
+    answer:
+      "Yes! We offer A La Carte agent access for users on Personal or Entrepreneur plans who want specific premium AI Employees without upgrading their entire subscription. For $9.99/month per agent, you can unlock any individual AI Employee from higher tiers. This is perfect if you only need one or two specialized agents - like the Legal Advisor or M&A Specialist - without paying for the full Business or Founders plan. A La Carte subscriptions are billed monthly and can be canceled anytime. Visit the AI Employees page in your dashboard to browse available agents and add them to your plan.",
+  },
+  {
+    question: "How do webhooks and automation work?",
+    answer:
+      "Webhooks allow external services (like Zapier, Make, or your own applications) to trigger AI tasks automatically. You generate an API key from your dashboard, then send POST requests to our webhook endpoint with your task details. Tasks are processed in the background, and you can view results in your Task Queue dashboard. This enables powerful automations like processing incoming emails, handling form submissions, or running scheduled reports.",
+  },
+  {
+    question: "Do you offer refunds?",
+    answer:
+      "We offer a 14-day money-back guarantee for new subscribers. If you are not satisfied with our service within the first 14 days, contact our support team for a full refund. After 14 days, we do not offer refunds for partial months, but you can cancel anytime and retain access until the end of your billing period.",
+  },
+  {
+    question: "Can I use 247 AI Employees for my team or business?",
+    answer:
+      "Yes. Most teams start with a self-serve plan—pick the tier that matches task volume and how many AI Employees you need. For larger rollouts with custom pricing, integrations, and dedicated support, see the Founders plan on pricing and contact sales.",
+  },
+  {
     question: "How does Founders (custom pricing) work?",
     answer:
       "Founders is a consultative tier for teams that need a tailored rollout (integrations, governance, and support depth). Pricing is quoted based on scope and expected volume, rather than a fixed public rate. Start by clicking Contact Sales on pricing; we will scope fit, timeline, and expected outcomes on a call.",
@@ -24,46 +64,6 @@ const faqs: { question: string; answer: ReactNode }[] = [
     question: "How quickly can we start after a Founders call?",
     answer:
       "Most teams can start quickly once scope is agreed. We typically run a short discovery and setup phase first so integrations, guardrails, and ownership are clear before production traffic ramps.",
-  },
-  {
-    question: "How secure is my data with 247 AI Employees?",
-    answer:
-      "Your data is encrypted at rest and in transit (AES-256 and TLS 1.3). We use Supabase with Row Level Security so users only access their own data. Payments run through Stripe (PCI DSS Level 1); we do not store card details on our servers. API access is authenticated and rate-limited. For Founders and enterprise engagements, we scope retention and access in writing.",
-  },
-  {
-    question: "What are AI Employees and how do they work?",
-    answer:
-      "AI Employees are intelligent agents powered by advanced language models like ChatGPT. Each AI Employee is specialized for a specific role - such as Sales, Marketing, Customer Support, or Data Analysis. You can interact with them via chat, or automate them using webhooks and scheduled tasks. They learn from your instructions and can handle repetitive tasks 24/7 without breaks.",
-  },
-  {
-    question: "Can I upgrade or downgrade my plan at any time?",
-    answer:
-      "Yes, you can change your subscription plan at any time. When you upgrade, you get immediate access to additional AI Employees and higher task limits. If you downgrade, the change takes effect at the start of your next billing cycle. Any unused tasks do not roll over to the next month.",
-  },
-  {
-    question: "What happens if I exceed my monthly task limit?",
-    answer:
-      "When you reach your monthly task limit, you can buy Token Packs in the dashboard: Boost Pack (50 tasks, about $14.99), Power Pack (150 tasks, about $39.99), or Scale Pack (500 tasks, about $99.99). Credits apply immediately and do not expire. You can also upgrade your subscription for a higher monthly allowance and more AI Employees. We notify you at 80% and 100% of usage.",
-  },
-  {
-    question: "Can I access premium AI Employees without upgrading my full plan?",
-    answer:
-      "Yes! We offer A La Carte agent access for users on Personal or Entrepreneur plans who want specific premium AI Employees without upgrading their entire subscription. For $9.99/month per agent, you can unlock any individual AI Employee from higher tiers. This is perfect if you only need one or two specialized agents - like the Legal Advisor or M&A Specialist - without paying for the full Business or Enterprise plan. A La Carte subscriptions are billed monthly and can be canceled anytime. Visit the AI Employees page in your dashboard to browse available agents and add them to your plan.",
-  },
-  {
-    question: "How do webhooks and automation work?",
-    answer:
-      "Webhooks allow external services (like Zapier, Make, or your own applications) to trigger AI tasks automatically. You generate an API key from your dashboard, then send POST requests to our webhook endpoint with your task details. Tasks are processed in the background, and you can view results in your Task Queue dashboard. This enables powerful automations like processing incoming emails, handling form submissions, or running scheduled reports.",
-  },
-  {
-    question: "Do you offer refunds?",
-    answer:
-      "We offer a 14-day money-back guarantee for new subscribers. If you are not satisfied with our service within the first 14 days, contact our support team for a full refund. After 14 days, we do not offer refunds for partial months, but you can cancel anytime and retain access until the end of your billing period.",
-  },
-  {
-    question: "Can I use 247 AI Employees for my team or business?",
-    answer:
-      "Yes. Most teams start with a self-serve plan—pick the tier that matches task volume and how many AI Employees you need. For larger rollouts with custom pricing, integrations, and dedicated support, see the Founders tier on pricing and contact sales.",
   },
 ]
 

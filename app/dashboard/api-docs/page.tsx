@@ -106,7 +106,7 @@ export default function ApiDocsPage() {
     "tasks_used": 150,
     "tasks_limit": 999999
   },
-  "available_employees": 30,
+  "available_employees": 38,
   "api_version": "1.0.0"
 }`
     }

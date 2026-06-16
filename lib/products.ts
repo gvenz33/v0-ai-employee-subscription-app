@@ -86,7 +86,7 @@ export const PLANS: Plan[] = [
     monthlyPriceInCents: 0,
     annualPriceInCents: 0,
     features: [
-      "All 30 AI Employees",
+      "All 38 AI Employees",
       "Unlimited tasks",
       "Premium specialized bots",
       "Dedicated account manager",
@@ -96,7 +96,7 @@ export const PLANS: Plan[] = [
       "SLA guarantee",
     ],
     limits: {
-      aiEmployees: 30,
+      aiEmployees: 38,
       tasksPerMonth: 999999,
       support: "dedicated",
     },
@@ -697,6 +697,8 @@ export const AI_EMPLOYEES: AIEmployee[] = [
 
 // Alias for backward compatibility
 export const AI_EMPLOYEE_CATALOG = AI_EMPLOYEES
+
+export const AI_EMPLOYEE_COUNT = AI_EMPLOYEES.length
 
 // Get employees by department
 export function getEmployeesByDepartment(department: Department): AIEmployee[] {

@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
 
 export const siteDefaultMetadata: Metadata = {
-  title: "247 AI Employees - Hire AI Employees That Work 24/7",
+  title: "247 AI Employees - Your lean AI back office",
   description:
-    "Deploy intelligent AI agents that automate sales, marketing, support, and more. Scale your team without the overhead. Available 24/7.",
+    "Deploy AI Employees for lead follow-up, inbox triage, content, and more. Templates, task queue, and automations—start in minutes, scale to 38 specialists.",
   icons: {
     icon: "/images/app-icon-192.png",
     shortcut: "/images/app-icon-192.png",

@@ -1,5 +1,9 @@
-import { AI_EMPLOYEE_CATALOG } from "@/lib/products"
+"use client"
+
+import { useState } from "react"
+import { AI_EMPLOYEE_CATALOG, AI_EMPLOYEE_COUNT } from "@/lib/products"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   TrendingUp, PenTool, BarChart3, Headphones, Search, Share2,
   Mail, Code, DollarSign, Users, Clipboard, Shield, Microscope, Code2,
@@ -22,7 +26,12 @@ const tierLabels: Record<string, string> = {
   enterprise: "Enterprise",
 }
 
+const FEATURED_COUNT = 8
+
 export function AgentsShowcase() {
+  const [showAll, setShowAll] = useState(false)
+  const visibleAgents = showAll ? AI_EMPLOYEE_CATALOG : AI_EMPLOYEE_CATALOG.slice(0, FEATURED_COUNT)
+
   return (
     <section id="agents" className="px-6 py-24">
       <div className="mx-auto max-w-7xl">
@@ -31,12 +40,13 @@ export function AgentsShowcase() {
             Meet your AI workforce
           </h2>
           <p className="mt-4 text-pretty text-lg text-muted-foreground">
-            Each agent is specialized in their domain, trained on industry best practices, and ready to deploy.
+            Start with one workflow, then scale with {AI_EMPLOYEE_COUNT} specialists across sales, ops, content, and
+            more—each trained on role-specific best practices.
           </p>
         </div>
 
         <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {AI_EMPLOYEE_CATALOG.map((agent) => {
+          {visibleAgents.map((agent) => {
             const Icon = iconMap[agent.icon] || BarChart3
             return (
               <div
@@ -67,6 +77,14 @@ export function AgentsShowcase() {
             )
           })}
         </div>
+
+        {!showAll && AI_EMPLOYEE_CATALOG.length > FEATURED_COUNT && (
+          <div className="mt-10 flex justify-center">
+            <Button variant="outline" onClick={() => setShowAll(true)}>
+              View all {AI_EMPLOYEE_COUNT} AI Employees
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   )

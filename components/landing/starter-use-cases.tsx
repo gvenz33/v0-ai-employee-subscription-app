@@ -7,7 +7,7 @@ const cases = [
     icon: MessageSquare,
     title: "Lead follow-up",
     bullets: [
-      "Reply in minutes (even when youre busy)",
+      "Reply in minutes (even when you're busy)",
       "Draft follow-ups that sound human",
       "Keep momentum until they book",
     ],
@@ -33,7 +33,8 @@ export function StarterUseCases() {
             Three simple places to start
           </h2>
           <p className="mt-4 text-pretty text-lg text-muted-foreground">
-            Clear outcomes, no jargon. Pick one, try it on a real workflow this week.
+            Clear outcomes, no jargon. Pick one, try it on a real workflow this week. Lead follow-up is the fastest
+            win—try the others when you&apos;re ready.
           </p>
         </div>
 
