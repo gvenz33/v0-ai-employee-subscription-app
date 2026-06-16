@@ -3,67 +3,100 @@
 import { useState, type ReactNode } from "react"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AI_EMPLOYEE_COUNT } from "@/lib/products"
 
 const faqs: { question: string; answer: ReactNode }[] = [
   {
-    question: "What are AI Employees and how do they work?",
-    answer:
-      "AI Employees are intelligent agents powered by advanced language models like ChatGPT. Each AI Employee is specialized for a specific role - such as Sales, Marketing, Customer Support, or Data Analysis. You can interact with them via chat, or automate them using webhooks and scheduled tasks. They learn from your instructions and can handle repetitive tasks 24/7 without breaks.",
+    question: "What are AI Employees?",
+    answer: (
+      <>
+        AI Employees are role-specific agents that handle repeatable work in your lean back office—lead follow-up,
+        inbox triage, content repurposing, reporting, and more. Each of our {AI_EMPLOYEE_COUNT} specialists is tuned for
+        a job (sales, ops, marketing, support, and beyond). You chat with them in the dashboard, queue tasks, or run
+        them on autopilot with webhooks and scheduled jobs.
+      </>
+    ),
   },
   {
-    question: "How secure is my data with 247 AI Employees?",
-    answer:
-      "Your data is encrypted at rest and in transit (AES-256 and TLS 1.3). We use Supabase with Row Level Security so users only access their own data. Payments run through Stripe (PCI DSS Level 1); we do not store card details on our servers. API access is authenticated and rate-limited. For Founders and enterprise engagements, we scope retention and access in writing.",
+    question: "Where should I start?",
+    answer: (
+      <>
+        Most people begin with one of three starter workflows:{" "}
+        <a href="/#starter">lead follow-up</a>, inbox + task triage, or content repurposing. Lead follow-up is usually
+        the fastest win. Deploy one AI Employee from a template, run it on a real workflow this week, then add more as
+        you grow.
+      </>
+    ),
   },
   {
-    question: "Can I upgrade or downgrade my plan at any time?",
+    question: "How fast can I deploy my first AI Employee?",
     answer:
-      "Yes, you can change your subscription plan at any time. When you upgrade, you get immediate access to additional AI Employees and higher task limits. If you downgrade, the change takes effect at the start of your next billing cycle. Any unused tasks do not roll over to the next month.",
+      "Minutes, not weeks. Pick a starter workflow, choose a matching agent from the catalog, and use built-in templates to set tone and rules. Your task queue, dashboard, and automations are included from day one—no engineering project required.",
   },
   {
-    question: "What happens if I exceed my monthly task limit?",
-    answer:
-      "When you reach your monthly task limit, you can buy Token Packs in the dashboard: Boost Pack (50 tasks, about $14.99), Power Pack (150 tasks, about $39.99), or Scale Pack (500 tasks, about $99.99). Credits apply immediately and do not expire. You can also upgrade your subscription for a higher monthly allowance and more AI Employees. We notify you at 80% and 100% of usage.",
+    question: "How many AI Employees are available?",
+    answer: `The catalog includes ${AI_EMPLOYEE_COUNT} specialists across sales, marketing, operations, finance, creative, and premium domains. Self-serve plans unlock a subset based on tier; you can add individual premium agents à la carte, or get the full roster through the Founders plan (custom pricing).`,
   },
   {
-    question: "Can I access premium AI Employees without upgrading my full plan?",
+    question: "How secure is my data?",
     answer:
-      "Yes! We offer A La Carte agent access for users on Personal or Entrepreneur plans who want specific premium AI Employees without upgrading their entire subscription. For $9.99/month per agent, you can unlock any individual AI Employee from higher tiers. This is perfect if you only need one or two specialized agents - like the Legal Advisor or M&A Specialist - without paying for the full Business or Founders plan. A La Carte subscriptions are billed monthly and can be canceled anytime. Visit the AI Employees page in your dashboard to browse available agents and add them to your plan.",
+      "Your data is encrypted at rest and in transit (AES-256 and TLS 1.3). We use Supabase with Row Level Security so users only access their own data. Payments run through Stripe (PCI DSS Level 1); we do not store card details on our servers. API access is authenticated and rate-limited. For Founders engagements, we scope retention and access in writing.",
+  },
+  {
+    question: "Can I upgrade or downgrade my plan?",
+    answer:
+      "Yes. Upgrades take effect immediately—you get more AI Employees and a higher monthly task allowance right away. Downgrades apply at the start of your next billing cycle. Unused tasks do not roll over month to month.",
+  },
+  {
+    question: "What happens if I hit my monthly task limit?",
+    answer:
+      "You can buy Token Packs in the dashboard: Boost Pack (50 tasks, about $14.99), Power Pack (150 tasks, about $39.99), or Scale Pack (500 tasks, about $99.99). Credits apply immediately and do not expire. You can also upgrade your plan for a higher monthly cap. We notify you at 80% and 100% of usage.",
+  },
+  {
+    question: "Can I unlock one premium agent without upgrading my whole plan?",
+    answer:
+      "Yes. Personal and Entrepreneur subscribers can add individual premium AI Employees à la carte for $9.99/month each—useful when you only need one specialist (for example Legal Advisor or M&A Specialist) without moving to Business or Founders. Manage add-ons from the AI Employees page in your dashboard.",
   },
   {
     question: "How do webhooks and automation work?",
     answer:
-      "Webhooks allow external services (like Zapier, Make, or your own applications) to trigger AI tasks automatically. You generate an API key from your dashboard, then send POST requests to our webhook endpoint with your task details. Tasks are processed in the background, and you can view results in your Task Queue dashboard. This enables powerful automations like processing incoming emails, handling form submissions, or running scheduled reports.",
+      "Generate an API key in your dashboard, then send tasks to our webhook endpoint from Zapier, Make, or your own apps. Work runs in the background and shows up in your task queue—ideal for inbox triggers, form submissions, scheduled follow-ups, and keeping starter workflows on autopilot.",
   },
   {
     question: "Do you offer refunds?",
     answer:
-      "We offer a 14-day money-back guarantee for new subscribers. If you are not satisfied with our service within the first 14 days, contact our support team for a full refund. After 14 days, we do not offer refunds for partial months, but you can cancel anytime and retain access until the end of your billing period.",
+      "New subscribers get a 14-day money-back guarantee. Contact support within the first 14 days for a full refund. After that, you can cancel anytime and keep access through the end of your billing period; we do not refund partial months.",
   },
   {
-    question: "Can I use 247 AI Employees for my team or business?",
-    answer:
-      "Yes. Most teams start with a self-serve plan—pick the tier that matches task volume and how many AI Employees you need. For larger rollouts with custom pricing, integrations, and dedicated support, see the Founders plan on pricing and contact sales.",
+    question: "Is this for solo operators or teams?",
+    answer: (
+      <>
+        Both. Solo operators use self-serve plans to run a lean back office without hiring. Teams pick a tier that
+        matches task volume and how many agents they need. For larger rollouts—custom pricing, integrations, governance,
+        and dedicated support—see{" "}
+        <a href="/#pricing">Founders (custom pricing)</a> and contact sales.
+      </>
+    ),
   },
   {
     question: "How does Founders (custom pricing) work?",
     answer:
-      "Founders is a consultative tier for teams that need a tailored rollout (integrations, governance, and support depth). Pricing is quoted based on scope and expected volume, rather than a fixed public rate. Start by clicking Contact Sales on pricing; we will scope fit, timeline, and expected outcomes on a call.",
+      "Founders is our consultative tier for teams that need a tailored rollout: integrations, governance, operations visibility, and deeper support. Pricing is quoted from scope and volume—not a fixed public rate. Click Contact Sales on pricing to scope fit, timeline, and outcomes on a call.",
   },
   {
     question: "Can Founders pricing be monthly or yearly?",
     answer:
-      "Yes. Founders deals can be quoted monthly, yearly, or both depending on your procurement preference. We can include ramp periods, phased launches, and clear success criteria in your engagement plan before launch.",
+      "Yes. Founders deals can be quoted monthly, yearly, or both. We can include ramp periods, phased launches, and clear success criteria before production traffic scales up.",
   },
   {
     question: "What is included in Founders beyond higher limits?",
     answer:
-      "Founders includes enterprise-level reliability and support features such as operations visibility, tenant-level controls, auditability, incident communication pathways, and premium onboarding for your environment. Exact deliverables depend on your final scope and implementation plan.",
+      "Founders includes enterprise-grade reliability and support: operations visibility, tenant-level controls, auditability, incident communication, premium onboarding, and access to all premium specialists. Exact deliverables depend on your scope and implementation plan.",
   },
   {
     question: "How quickly can we start after a Founders call?",
     answer:
-      "Most teams can start quickly once scope is agreed. We typically run a short discovery and setup phase first so integrations, guardrails, and ownership are clear before production traffic ramps.",
+      "Most teams move quickly once scope is agreed. We usually run a short discovery and setup phase first—integrations, guardrails, and ownership—before ramping production workloads.",
   },
 ]
 
@@ -99,7 +132,9 @@ function FAQItem({
         )}
       >
         <div className="overflow-hidden">
-          <div className="text-muted-foreground leading-relaxed [&_a]:text-primary">{answer}</div>
+          <div className="text-muted-foreground leading-relaxed [&_a]:text-primary [&_a]:underline-offset-4 hover:[&_a]:underline">
+            {answer}
+          </div>
         </div>
       </div>
     </div>
@@ -117,14 +152,14 @@ export function FAQ() {
             Frequently Asked Questions
           </h2>
           <p className="text-lg text-muted-foreground">
-            Everything you need to know about 247 AI Employees
+            Starter workflows, self-serve plans, and Founders—answered in plain language
           </p>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6">
           {faqs.map((faq, index) => (
             <FAQItem
-              key={index}
+              key={faq.question}
               question={faq.question}
               answer={faq.answer}
               isOpen={openIndex === index}

@@ -49,7 +49,7 @@ export function Navbar() {
             Log In
           </Link>
           <Link href="/auth/sign-up" className={cn(buttonVariants())}>
-            Get Started
+            Start free trial
           </Link>
         </div>
 
@@ -75,7 +75,7 @@ export function Navbar() {
                 Log In
               </Link>
               <Link href="/auth/sign-up" className={cn(buttonVariants(), "w-full justify-center")}>
-                Get Started
+                Start free trial
               </Link>
             </div>
           </div>
