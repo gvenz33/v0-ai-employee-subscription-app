@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { headers } from "next/headers"
 import { normalizeHost } from "@/lib/tenancy"
 import { getBrandedPublicContextForHost } from "@/lib/branded-public"
@@ -17,5 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function SignUpPage() {
   const brand = await getAuthBrandForRequest()
-  return <SignUpForm brand={brand} />
+  return (
+    <Suspense fallback={null}>
+      <SignUpForm brand={brand} />
+    </Suspense>
+  )
 }

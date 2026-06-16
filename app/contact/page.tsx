@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -12,6 +12,29 @@ import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Mail, CheckCircle } from "lucide-react"
 
 export default function ContactPage() {
+  return (
+    <Suspense fallback={<ContactPageFallback />}>
+      <ContactPageContent />
+    </Suspense>
+  )
+}
+
+function ContactPageFallback() {
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md space-y-6">
+        <Card className="bg-card border-border">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl text-foreground">Contact Us</CardTitle>
+            <CardDescription className="text-muted-foreground">Loading contact form...</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function ContactPageContent() {
   const searchParams = useSearchParams()
   const foundersIntent = (searchParams.get("subject") || "").toLowerCase().includes("founders")
 
