@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { getEmployeeById, hasAccessToEmployee } from '@/lib/products'
 import { EmployeeChatClient } from './employee-chat-client'
@@ -42,5 +43,9 @@ export default async function EmployeeChatPage({
     redirect('/dashboard/employees')
   }
 
-  return <EmployeeChatClient employeeId={id} />
+  return (
+    <Suspense fallback={<div className="p-6 text-muted-foreground">Loading chat...</div>}>
+      <EmployeeChatClient employeeId={id} />
+    </Suspense>
+  )
 }

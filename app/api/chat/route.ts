@@ -3,10 +3,12 @@ import { createClient } from '@/lib/supabase/server'
 import { getEmployeeById, hasAccessToEmployee } from '@/lib/products'
 import { validateApiKey, logApiRequest } from '@/lib/api-auth'
 import { guardTenantApiAccess } from '@/lib/tenant-api-quota'
+import { getLastUserTextFromUIMessages } from '@/lib/chat-message-utils'
+import { persistChatExchange } from '@/lib/chat-persistence'
 
 export async function POST(req: Request) {
   const startTime = Date.now()
-  const { messages, employeeId } = await req.json()
+  const { messages, employeeId, id: sessionId } = await req.json()
   
   // Get the AI employee configuration
   const employee = getEmployeeById(employeeId)
@@ -95,12 +97,13 @@ export async function POST(req: Request) {
 
   // Use the employee's system prompt directly
   const systemPrompt = employee.systemPrompt
+  const userText = getLastUserTextFromUIMessages(messages ?? [])
 
   const result = streamText({
     model: 'openai/gpt-4o-mini',
     system: systemPrompt,
     messages: await convertToModelMessages(messages),
-    onFinish: async () => {
+    onFinish: async ({ text }) => {
       // Log the task and increment usage
       await supabase.from('task_logs').insert({
         user_id: userId,
@@ -115,6 +118,16 @@ export async function POST(req: Request) {
         .from('profiles')
         .update({ tasks_used: profile.tasks_used + 1 })
         .eq('id', userId)
+
+      if (!apiKeyId && sessionId && userId && userText) {
+        await persistChatExchange(supabase, {
+          sessionId,
+          userId,
+          employeeId,
+          userText,
+          assistantText: text,
+        })
+      }
         
       // Log API request if using API key
       if (apiKeyId) {

@@ -4,7 +4,13 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { FileText, Download, ExternalLink, Receipt } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { FileText, Download, ExternalLink, Receipt, FileSpreadsheet } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface Invoice {
@@ -75,9 +81,21 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Invoice History</h1>
-        <p className="text-muted-foreground">View and download your past invoices</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Invoice History</h1>
+          <p className="text-muted-foreground">
+            View, export with letterhead, or download spreadsheets for your records
+          </p>
+        </div>
+        {invoices.length > 0 && (
+          <Button variant="outline" asChild>
+            <a href="/api/invoices/export?format=xlsx">
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Export all to Excel
+            </a>
+          </Button>
+        )}
       </div>
 
       <Card className="bg-card border-border">
@@ -87,7 +105,7 @@ export default function InvoicesPage() {
             Invoices
           </CardTitle>
           <CardDescription>
-            Your billing history and payment receipts
+            PDF exports use your white-label letterhead when enabled on Founders
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -106,7 +124,7 @@ export default function InvoicesPage() {
               {invoices.map(invoice => (
                 <div
                   key={invoice.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border bg-background"
+                  className="flex flex-col gap-4 rounded-lg border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-4">
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -126,21 +144,43 @@ export default function InvoicesPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:justify-end">
                     <Badge className={getStatusColor(invoice.status)}>
                       {invoice.status}
                     </Badge>
                     <span className="font-semibold text-foreground">
                       {formatCurrency(invoice.amount_cents, invoice.currency)}
                     </span>
-                    {invoice.invoice_url && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={invoice.invoice_url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          View
-                        </a>
-                      </Button>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Download className="mr-2 h-4 w-4" />
+                          Export
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <a href={`/api/invoices/export?format=pdf&invoiceId=${invoice.id}`}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            PDF with letterhead
+                          </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <a href="/api/invoices/export?format=xlsx">
+                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            Excel spreadsheet
+                          </a>
+                        </DropdownMenuItem>
+                        {invoice.invoice_url && (
+                          <DropdownMenuItem asChild>
+                            <a href={invoice.invoice_url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                              Stripe receipt
+                            </a>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))}
