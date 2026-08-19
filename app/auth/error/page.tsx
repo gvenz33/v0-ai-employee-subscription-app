@@ -19,8 +19,32 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: "Authentication error · 247 AI Employees" }
 }
 
-export default async function AuthErrorPage() {
+function friendlyErrorMessage(error?: string, description?: string): string {
+  if (description && description !== error) {
+    return description
+  }
+
+  const code = (error || "").toLowerCase()
+  if (code.includes("expired") || code.includes("otp_expired")) {
+    return "This link has expired. Please request a new confirmation or reset email."
+  }
+  if (code.includes("invalid") || code.includes("access_denied")) {
+    return "This link is invalid or has already been used. Please try again."
+  }
+  if (error) {
+    return error
+  }
+  return "Something went wrong during authentication. Please try again."
+}
+
+export default async function AuthErrorPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; error_description?: string }>
+}) {
   const brand = await getAuthBrandForRequest()
+  const params = await searchParams
+  const message = friendlyErrorMessage(params.error, params.error_description)
 
   return (
     <AuthPageChrome brand={brand}>
@@ -31,12 +55,15 @@ export default async function AuthErrorPage() {
           </div>
           <CardTitle className="text-2xl text-foreground">Authentication Error</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Something went wrong during authentication. Please try again.
+            {message}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button asChild className="w-full">
             <Link href="/auth/login">Back to Login</Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/auth/sign-up">Create a new account</Link>
           </Button>
           <Link href="/" className="inline-block text-sm text-muted-foreground hover:text-foreground">
             Go to homepage

@@ -1,6 +1,5 @@
 "use client"
 
-import { createClient } from "@/lib/supabase/client"
 import { signInWithPasswordAction } from "@/app/auth/login/actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -48,15 +47,20 @@ export function LoginForm({ brand }: Props) {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       })
-      if (error) throw error
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send reset email")
+      }
       setResetSent(true)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred")

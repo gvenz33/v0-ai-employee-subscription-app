@@ -1,6 +1,5 @@
 "use client"
 
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -38,7 +37,6 @@ function SignUpFormInner({ brand }: Props) {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
@@ -49,20 +47,22 @@ function SignUpFormInner({ brand }: Props) {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-            `${window.location.origin}/dashboard`,
-          data: {
-            full_name: fullName,
-            referral_code: referralCode,
-          },
-        },
+      const response = await fetch("/api/auth/sign-up", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          full_name: fullName,
+          referral_code: referralCode,
+        }),
       })
-      if (error) throw error
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create account")
+      }
+
       localStorage.removeItem("referral_code")
       router.push("/auth/sign-up-success")
     } catch (err: unknown) {

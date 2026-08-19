@@ -27,9 +27,9 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen min-h-screen overflow-hidden bg-background">
       <AdminSidebar isSuperAdmin={profile.is_superadmin} />
-      <main className="flex-1 overflow-auto pb-24 lg:pb-0">
+      <main className="flex-1 overflow-y-auto overscroll-y-contain pb-24 lg:pb-0">
         {children}
       </main>
       <MobileAdminNav />

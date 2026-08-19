@@ -222,13 +222,15 @@ export default function SettingsPage() {
   }
 
   async function handleChangePassword() {
-    const supabase = createClient()
-    const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`
+    const response = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: profile.email }),
     })
 
-    if (error) {
-      toast.error("Failed to send password reset email")
+    const data = await response.json()
+    if (!response.ok) {
+      toast.error(data.error || "Failed to send password reset email")
     } else {
       toast.success("Password reset email sent")
     }

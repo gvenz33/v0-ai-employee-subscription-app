@@ -45,6 +45,7 @@ export default async function EmployeesPage() {
 
   const tier = profile?.subscription_tier || "personal"
   const currentPlan = getPlanById(tier)
+  const disabledAgents: string[] = profile?.disabled_agents ?? []
 
   // Group employees by department
   const employeesByDepartment = DEPARTMENTS.map(dept => ({
@@ -80,7 +81,9 @@ export default async function EmployeesPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {department.employees.map((employee) => {
               const userEmployee = userEmployees?.find((e) => e.name === employee.name)
-              const hasAccess = hasAccessToEmployee(tier, employee, alaUnlockedIds)
+              const adminDisabled = disabledAgents.includes(employee.id)
+              const hasAccess =
+                !adminDisabled && hasAccessToEmployee(tier, employee, alaUnlockedIds)
               const unlockedViaAlaCarte =
                 Boolean(employee.isALaCarte) && alaUnlockedIds.includes(employee.id)
 
