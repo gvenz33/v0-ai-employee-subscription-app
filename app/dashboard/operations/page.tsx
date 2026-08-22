@@ -140,7 +140,7 @@ export default function DashboardOperationsPage() {
                 ? `${summary.counts.api_calls_rolling_1h} / ${summary.counts.api_hourly_cap}`
                 : "—"}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">Per-tenant API quota window</p>
+            <p className="text-xs text-muted-foreground mt-1">Per-workspace API quota window</p>
           </CardContent>
         </Card>
         <Card>

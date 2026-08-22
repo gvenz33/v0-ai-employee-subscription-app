@@ -520,7 +520,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="wlTenantSlug">Tenant subdomain slug</Label>
+                <Label htmlFor="wlTenantSlug">Workspace subdomain slug</Label>
                 <Input
                   id="wlTenantSlug"
                   value={tenantSlug}
@@ -664,7 +664,7 @@ export default function SettingsPage() {
               Branded public experience
             </CardTitle>
             <CardDescription>
-              Tenant landing, SEO, legal and support links, and branded auth — available on your subdomain or custom domain
+              Branded landing, SEO, legal and support links, and branded auth — available on your subdomain or custom domain
               when white-label is enabled.
             </CardDescription>
           </CardHeader>

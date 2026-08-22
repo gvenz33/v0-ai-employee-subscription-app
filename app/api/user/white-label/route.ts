@@ -95,7 +95,7 @@ export async function PUT(request: Request) {
   const requestedSlug = body.tenant_slug ? normalizeTenantSlug(String(body.tenant_slug)) : ""
   if (requestedSlug && (requestedSlug.length < 3 || requestedSlug.length > 63)) {
     return NextResponse.json(
-      { error: "Tenant slug must be between 3 and 63 characters." },
+          { error: "Workspace subdomain slug must be between 3 and 63 characters." },
       { status: 400 }
     )
   }
@@ -155,14 +155,14 @@ export async function PUT(request: Request) {
     if (tenantError) {
       if (tenantError.code === "23505") {
         return NextResponse.json(
-          { error: "That tenant slug is already in use. Please choose another." },
+          { error: "That workspace subdomain is already in use. Please choose another." },
           { status: 409 }
         )
       }
       return NextResponse.json(
         {
           error:
-            "Failed to save tenant subdomain. Ensure scripts/006_tenant_routing_subdomains.sql has been run.",
+            "Failed to save workspace subdomain. Ensure scripts/006_tenant_routing_subdomains.sql has been run.",
         },
         { status: 500 }
       )

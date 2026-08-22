@@ -45,8 +45,8 @@ type AuditAdminRow = {
 export default function AdminOperationsPage() {
   const [incidents, setIncidents] = useState<IncidentRow[]>([])
   const [audit, setAudit] = useState<AuditAdminRow[]>([])
-  const [tenantQuery, setTenantQuery] = useState("")
-  const [tenantJson, setTenantJson] = useState<string>("")
+  const [workspaceQuery, setWorkspaceQuery] = useState("")
+  const [workspaceJson, setWorkspaceJson] = useState<string>("")
   const [newIncident, setNewIncident] = useState({
     title: "",
     description: "",
@@ -54,13 +54,13 @@ export default function AdminOperationsPage() {
     is_public: false,
   })
 
-  const tenantPretty = useMemo(() => {
+  const workspacePretty = useMemo(() => {
     try {
-      return tenantJson ? JSON.stringify(JSON.parse(tenantJson), null, 2) : ""
+      return workspaceJson ? JSON.stringify(JSON.parse(workspaceJson), null, 2) : ""
     } catch {
-      return tenantJson
+      return workspaceJson
     }
-  }, [tenantJson])
+  }, [workspaceJson])
 
   useEffect(() => {
     ;(async () => {
@@ -113,44 +113,46 @@ export default function AdminOperationsPage() {
     await reloadIncidents()
   }
 
-  const lookupTenant = async () => {
-    const res = await fetch(`/api/admin/tenant-support?q=${encodeURIComponent(tenantQuery)}`)
+  const lookupWorkspace = async () => {
+    const res = await fetch(`/api/admin/tenant-support?q=${encodeURIComponent(workspaceQuery)}`)
     const body = await res.json()
-    setTenantJson(JSON.stringify(body))
+    setWorkspaceJson(JSON.stringify(body))
   }
 
   return (
     <div className="p-8 space-y-10 max-w-7xl">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Operations & SLA</h1>
+        <h1 className="text-3xl font-bold text-foreground">Platform Status & Founders Support</h1>
         <p className="text-muted-foreground mt-1">
-          Incident workflow, tenant lookup, and cross-tenant audit visibility for staff admins.
+          Log platform outages, look up Founders customer workspaces, and review recent staff/system activity.
         </p>
       </div>
 
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Tenant support lookup</CardTitle>
-          <CardDescription>Search by UUID or partial email.</CardDescription>
+          <CardTitle>Customer workspace lookup</CardTitle>
+          <CardDescription>
+            Find a Founders customer by email or user ID to see usage, domains, and open support escalations.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1 space-y-2">
-              <Label htmlFor="tenant-q">Query</Label>
+              <Label htmlFor="workspace-q">Email or user ID</Label>
               <Input
-                id="tenant-q"
-                value={tenantQuery}
-                onChange={(e) => setTenantQuery(e.target.value)}
+                id="workspace-q"
+                value={workspaceQuery}
+                onChange={(e) => setWorkspaceQuery(e.target.value)}
                 placeholder="user@example.com or UUID"
               />
             </div>
-            <Button type="button" onClick={lookupTenant}>
+            <Button type="button" onClick={lookupWorkspace}>
               Look up
             </Button>
           </div>
-          {tenantPretty ? (
+          {workspacePretty ? (
             <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto max-h-96 whitespace-pre-wrap">
-              {tenantPretty}
+              {workspacePretty}
             </pre>
           ) : null}
         </CardContent>
@@ -158,8 +160,10 @@ export default function AdminOperationsPage() {
 
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Incidents</CardTitle>
-          <CardDescription>Create or resolve platform incidents. Check “public” to show on status experiences.</CardDescription>
+          <CardTitle>Platform incidents</CardTitle>
+          <CardDescription>
+            Create or resolve outages and degradations. Mark as public to show Founders customers on their Operations page.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
@@ -197,8 +201,8 @@ export default function AdminOperationsPage() {
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <Label>Public incident</Label>
-              <p className="text-xs text-muted-foreground">Visible to end users via /api/public/incidents</p>
+              <Label>Show to customers</Label>
+              <p className="text-xs text-muted-foreground">Visible on Founders Operations pages when public</p>
             </div>
             <Switch
               checked={newIncident.is_public}
@@ -215,7 +219,7 @@ export default function AdminOperationsPage() {
                 <TableHead>Title</TableHead>
                 <TableHead>Severity</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Public</TableHead>
+                <TableHead>Visible</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -249,15 +253,15 @@ export default function AdminOperationsPage() {
 
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Recent audit (global)</CardTitle>
-          <CardDescription>Last 80 entries including admin and automated actions.</CardDescription>
+          <CardTitle>Recent activity log</CardTitle>
+          <CardDescription>Last 80 admin, system, and automated actions across customer workspaces.</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>When</TableHead>
-                <TableHead>Workspace</TableHead>
+                <TableHead>Customer workspace</TableHead>
                 <TableHead>Action</TableHead>
                 <TableHead>Source</TableHead>
               </TableRow>

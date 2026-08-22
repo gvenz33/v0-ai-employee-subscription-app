@@ -1,7 +1,27 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdmin } from "@/lib/supabase/admin"
-import { getAuthCallbackUrl } from "@/lib/auth-redirect"
+import { buildEmailConfirmUrl } from "@/lib/auth-redirect"
 import { sendAuthConfirmationEmail } from "@/lib/send-auth-email"
+
+async function sendConfirmEmail(input: {
+  origin: string
+  email: string
+  name?: string
+  tokenHash: string
+}) {
+  const confirmUrl = buildEmailConfirmUrl({
+    origin: input.origin,
+    tokenHash: input.tokenHash,
+    type: "email",
+    next: "/dashboard",
+  })
+
+  return sendAuthConfirmationEmail({
+    to: input.email,
+    name: input.name,
+    confirmUrl,
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,46 +29,79 @@ export async function POST(request: NextRequest) {
     const origin = new URL(request.url).origin
 
     const normalizedEmail = String(email || "").trim().toLowerCase()
+    const name = full_name ? String(full_name).trim() : undefined
     if (!normalizedEmail || !password || String(password).length < 8) {
       return NextResponse.json({ error: "Valid email and password (min 8 characters) are required" }, { status: 400 })
     }
 
     const admin = getSupabaseAdmin()
-    const callbackUrl = getAuthCallbackUrl(origin)
 
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: "signup",
       email: normalizedEmail,
       password: String(password),
       options: {
-        redirectTo: callbackUrl,
+        redirectTo: `${origin}/dashboard`,
         data: {
-          full_name: full_name ? String(full_name).trim() : "",
+          full_name: name || "",
           referral_code: referral_code || null,
         },
       },
     })
 
-    if (linkError) {
+    if (!linkError) {
+      const tokenHash = linkData?.properties?.hashed_token
+      if (!tokenHash) {
+        return NextResponse.json({ error: "Failed to generate confirmation link" }, { status: 500 })
+      }
+
+      const emailResult = await sendConfirmEmail({
+        origin,
+        email: normalizedEmail,
+        name,
+        tokenHash,
+      })
+      if (!emailResult.ok) {
+        return NextResponse.json({ error: emailResult.error }, { status: 500 })
+      }
+      return NextResponse.json({ success: true })
+    }
+
+    // Account may already exist from a previous attempt with a broken confirmation link.
+    const alreadyExists = /already|registered|exists/i.test(linkError.message || "")
+    if (!alreadyExists) {
       return NextResponse.json({ error: linkError.message }, { status: 400 })
     }
 
-    const confirmUrl = linkData?.properties?.action_link
-    if (!confirmUrl) {
+    const { data: magicData, error: magicError } = await admin.auth.admin.generateLink({
+      type: "magiclink",
+      email: normalizedEmail,
+      options: { redirectTo: `${origin}/dashboard` },
+    })
+
+    if (magicError) {
+      return NextResponse.json(
+        { error: "An account with this email already exists. Try signing in, or use Forgot password." },
+        { status: 400 },
+      )
+    }
+
+    const tokenHash = magicData?.properties?.hashed_token
+    if (!tokenHash) {
       return NextResponse.json({ error: "Failed to generate confirmation link" }, { status: 500 })
     }
 
-    const emailResult = await sendAuthConfirmationEmail({
-      to: normalizedEmail,
-      name: full_name ? String(full_name).trim() : undefined,
-      confirmUrl,
+    const emailResult = await sendConfirmEmail({
+      origin,
+      email: normalizedEmail,
+      name,
+      tokenHash,
     })
-
     if (!emailResult.ok) {
       return NextResponse.json({ error: emailResult.error }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, resent: true })
   } catch (error) {
     console.error("[auth/sign-up] Error:", error)
     return NextResponse.json({ error: "Failed to create account" }, { status: 500 })

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdmin } from "@/lib/supabase/admin"
-import { getAuthCallbackUrl } from "@/lib/auth-redirect"
+import { buildEmailConfirmUrl } from "@/lib/auth-redirect"
 import { sendAuthPasswordResetEmail } from "@/lib/send-auth-email"
 
 export async function POST(request: NextRequest) {
@@ -14,12 +14,11 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = getSupabaseAdmin()
-    const callbackUrl = getAuthCallbackUrl(origin, "/auth/reset-password")
 
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: "recovery",
       email: normalizedEmail,
-      options: { redirectTo: callbackUrl },
+      options: { redirectTo: `${origin}/auth/reset-password` },
     })
 
     if (linkError) {
@@ -30,10 +29,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: linkError.message }, { status: 400 })
     }
 
-    const resetUrl = linkData?.properties?.action_link
-    if (!resetUrl) {
+    const tokenHash = linkData?.properties?.hashed_token
+    if (!tokenHash) {
       return NextResponse.json({ error: "Failed to generate reset link" }, { status: 500 })
     }
+
+    const resetUrl = buildEmailConfirmUrl({
+      origin,
+      tokenHash,
+      type: "recovery",
+      next: "/auth/reset-password",
+    })
 
     const { data: profile } = await admin
       .from("profiles")
