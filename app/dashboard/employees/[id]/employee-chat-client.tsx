@@ -24,6 +24,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { DictationButton } from '@/components/dictation-button'
+import { EmmaGmailPanel } from '@/components/dashboard/emma-gmail-panel'
 import { cn } from '@/lib/utils'
 
 function formatSessionDate(value: string) {
@@ -275,8 +276,16 @@ export function EmployeeChatClient({ employeeId }: { employeeId: string }) {
     )
   }
 
+  const isEmma = employeeId === 'email-assistant'
+
   return (
-    <div className="flex h-[calc(100vh-120px)] flex-col">
+    <div
+      className={cn(
+        'flex flex-col',
+        isEmma ? 'min-h-[calc(100vh-120px)]' : 'h-[calc(100vh-120px)]',
+      )}
+    >
+      {isEmma ? <EmmaGmailPanel /> : null}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/employees">
@@ -321,7 +330,7 @@ export function EmployeeChatClient({ employeeId }: { employeeId: string }) {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4">
+      <div className={cn('flex min-h-0 gap-4', isEmma ? 'h-[calc(100vh-280px)]' : 'flex-1')}>
         <Card className="hidden w-72 shrink-0 flex-col border-border bg-card md:flex">
           <CardHeader className="border-b border-border py-3">
             <CardDescription className="flex items-center gap-2 text-sm font-medium text-foreground">
