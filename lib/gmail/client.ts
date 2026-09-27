@@ -218,3 +218,280 @@ export async function gmailTrashMessages(input: {
 
   return { trashed, failed }
 }
+
+export function extractEmailAddress(fromHeader: string): string {
+  const angle = fromHeader.match(/<([^>]+)>/)
+  if (angle?.[1]) return angle[1].trim().toLowerCase()
+  const bare = fromHeader.trim().toLowerCase()
+  return bare.includes("@") ? bare.replace(/^"|"$/g, "") : bare
+}
+
+function decodeBodyData(data?: string): string {
+  if (!data) return ""
+  try {
+    const normalized = data.replace(/-/g, "+").replace(/_/g, "/")
+    return Buffer.from(normalized, "base64").toString("utf8")
+  } catch {
+    return ""
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractPlainTextFromPayload(payload: any): string {
+  if (!payload) return ""
+  const mime = String(payload.mimeType || "")
+  if (mime === "text/plain" && payload.body?.data) {
+    return decodeBodyData(payload.body.data)
+  }
+  const parts = payload.parts || []
+  let plain = ""
+  let html = ""
+  for (const part of parts) {
+    const partMime = String(part.mimeType || "")
+    if (partMime === "text/plain") {
+      plain += decodeBodyData(part.body?.data)
+    } else if (partMime === "text/html") {
+      html += decodeBodyData(part.body?.data)
+    } else if (part.parts) {
+      const nested = extractPlainTextFromPayload(part)
+      if (nested) plain += nested
+    }
+  }
+  if (plain.trim()) return plain
+  if (html.trim()) {
+    return html
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+  }
+  if (payload.body?.data) return decodeBodyData(payload.body.data)
+  return ""
+}
+
+export type GmailThreadMessage = {
+  id: string
+  threadId: string
+  from: string
+  to: string
+  subject: string
+  date: string
+  snippet: string
+  bodyText: string
+  messageIdHeader: string
+  references: string
+  inReplyTo: string
+  listUnsubscribe: string
+  listUnsubscribePost: string
+  labels: string[]
+  internalDate: number
+}
+
+export type GmailActiveThread = {
+  threadId: string
+  messageCount: number
+  latest: GmailThreadMessage
+  isActiveThread: boolean
+  latestFromUser: boolean
+}
+
+function headersToMap(headers: Array<{ name?: string; value?: string }> = []): GmailHeaderMap {
+  const map: GmailHeaderMap = {}
+  for (const h of headers) {
+    map[String(h.name || "").toLowerCase()] = String(h.value || "")
+  }
+  return map
+}
+
+function parseGmailMessage(msg: {
+  id: string
+  threadId: string
+  snippet?: string
+  labelIds?: string[]
+  internalDate?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  payload?: any
+}): GmailThreadMessage {
+  const headers = headersToMap(msg.payload?.headers || [])
+  const bodyText = extractPlainTextFromPayload(msg.payload).slice(0, 8000)
+  return {
+    id: msg.id,
+    threadId: msg.threadId,
+    from: headers.from || "",
+    to: headers.to || "",
+    subject: headers.subject || "(no subject)",
+    date: headers.date || "",
+    snippet: msg.snippet || "",
+    bodyText,
+    messageIdHeader: headers["message-id"] || "",
+    references: headers.references || "",
+    inReplyTo: headers["in-reply-to"] || "",
+    listUnsubscribe: headers["list-unsubscribe"] || "",
+    listUnsubscribePost: headers["list-unsubscribe-post"] || "",
+    labels: msg.labelIds || [],
+    internalDate: Number(msg.internalDate || 0),
+  }
+}
+
+export async function gmailGetThread(input: {
+  accessToken: string
+  threadId: string
+  userEmail: string
+}): Promise<GmailActiveThread | null> {
+  const res = await fetch(
+    `https://gmail.googleapis.com/gmail/v1/users/me/threads/${input.threadId}?format=full`,
+    { headers: { Authorization: `Bearer ${input.accessToken}` } },
+  )
+  const data = await res.json()
+  if (!res.ok) return null
+
+  const messages: GmailThreadMessage[] = (data.messages || []).map(parseGmailMessage)
+  if (!messages.length) return null
+
+  messages.sort((a, b) => a.internalDate - b.internalDate)
+  const latest = messages[messages.length - 1]
+  const userEmail = input.userEmail.toLowerCase()
+  const latestFromUser = extractEmailAddress(latest.from) === userEmail
+  const hasReplyHeaders = Boolean(latest.inReplyTo || latest.references)
+  const isActiveThread = messages.length >= 2 || (messages.length === 1 && hasReplyHeaders && !latestFromUser)
+
+  return {
+    threadId: input.threadId,
+    messageCount: messages.length,
+    latest,
+    isActiveThread,
+    latestFromUser,
+  }
+}
+
+export async function gmailCreateReplyDraft(input: {
+  accessToken: string
+  from: string
+  to: string
+  subject: string
+  body: string
+  threadId: string
+  inReplyTo?: string
+  references?: string
+}): Promise<{ draftId: string; messageId?: string }> {
+  const subject = input.subject.replace(/\r?\n/g, " ")
+  const reSubject = /^re:/i.test(subject) ? subject : `Re: ${subject}`
+  const headers = [
+    `From: ${input.from}`,
+    `To: ${input.to}`,
+    `Subject: ${reSubject}`,
+    "MIME-Version: 1.0",
+    'Content-Type: text/plain; charset="UTF-8"',
+  ]
+  if (input.inReplyTo) headers.push(`In-Reply-To: ${input.inReplyTo}`)
+  if (input.references || input.inReplyTo) {
+    const refs = [input.references, input.inReplyTo].filter(Boolean).join(" ").trim()
+    if (refs) headers.push(`References: ${refs}`)
+  }
+
+  const mime = [...headers, "", input.body].join("\r\n")
+  const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/drafts", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${input.accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: {
+        raw: toBase64Url(mime),
+        threadId: input.threadId,
+      },
+    }),
+  })
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(data.error?.message || "Failed to create reply draft")
+  }
+  return { draftId: data.id, messageId: data.message?.id }
+}
+
+export async function gmailMarkSpam(input: {
+  accessToken: string
+  messageIds: string[]
+}): Promise<{ marked: string[]; failed: Array<{ id: string; error: string }> }> {
+  const marked: string[] = []
+  const failed: Array<{ id: string; error: string }> = []
+
+  for (const id of input.messageIds) {
+    const res = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}/modify`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${input.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        addLabelIds: ["SPAM"],
+        removeLabelIds: ["INBOX"],
+      }),
+    })
+    if (res.ok) {
+      marked.push(id)
+    } else {
+      const data = await res.json().catch(() => ({}))
+      failed.push({ id, error: data.error?.message || "Mark spam failed" })
+    }
+  }
+
+  return { marked, failed }
+}
+
+export function parseListUnsubscribeUrls(header: string): { https: string[]; mailto: string[] } {
+  const https: string[] = []
+  const mailto: string[] = []
+  const matches = header.matchAll(/<([^>]+)>/g)
+  for (const m of matches) {
+    const url = m[1].trim()
+    if (url.toLowerCase().startsWith("mailto:")) mailto.push(url)
+    else if (url.toLowerCase().startsWith("https://") || url.toLowerCase().startsWith("http://")) {
+      https.push(url)
+    }
+  }
+  return { https, mailto }
+}
+
+export async function gmailAttemptUnsubscribe(input: {
+  listUnsubscribe: string
+  listUnsubscribePost?: string
+}): Promise<{ ok: boolean; method: "http" | "mailto" | "none"; detail: string }> {
+  const { https, mailto } = parseListUnsubscribeUrls(input.listUnsubscribe)
+  if (https.length) {
+    const url = https[0]
+    const oneClick = /list-unsubscribe=one-click/i.test(input.listUnsubscribePost || "")
+    try {
+      const res = await fetch(url, {
+        method: oneClick ? "POST" : "GET",
+        headers: oneClick
+          ? { "Content-Type": "application/x-www-form-urlencoded" }
+          : undefined,
+        body: oneClick ? "List-Unsubscribe=One-Click" : undefined,
+        redirect: "follow",
+      })
+      return {
+        ok: res.ok || res.status < 400,
+        method: "http",
+        detail: `HTTP ${res.status} ${url}`,
+      }
+    } catch (e) {
+      return {
+        ok: false,
+        method: "http",
+        detail: e instanceof Error ? e.message : "Unsubscribe request failed",
+      }
+    }
+  }
+  if (mailto.length) {
+    return {
+      ok: false,
+      method: "mailto",
+      detail: `Manual mailto unsubscribe required: ${mailto[0]}`,
+    }
+  }
+  return { ok: false, method: "none", detail: "No List-Unsubscribe URL found" }
+}

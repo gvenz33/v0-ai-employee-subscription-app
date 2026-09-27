@@ -21,15 +21,27 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Loader2, Mail, Link2, Unlink, Inbox, FileEdit, Trash2 } from "lucide-react"
 
-type Suggestion = {
+type DraftCreated = {
+  threadId: string
   messageId: string
   from: string
   subject: string
+  draftId: string
+  replySubject: string
+  replyPreview: string
+}
+
+type CleanupSuggestion = {
+  messageId: string
+  threadId: string
+  from: string
+  subject: string
   snippet: string
-  date: string
-  classification: "spam" | "solicitation"
+  action: "spam" | "unsubscribe" | "trash"
   confidence: "high" | "medium"
   reason: string
+  listUnsubscribe?: string
+  listUnsubscribePost?: string
 }
 
 export function EmmaGmailPanel() {
@@ -46,11 +58,13 @@ export function EmmaGmailPanel() {
   const [creatingDraft, setCreatingDraft] = useState(false)
 
   const [scanning, setScanning] = useState(false)
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [scannedCount, setScannedCount] = useState(0)
+  const [activeThreads, setActiveThreads] = useState(0)
+  const [draftsCreated, setDraftsCreated] = useState<DraftCreated[]>([])
+  const [cleanup, setCleanup] = useState<CleanupSuggestion[]>([])
   const [selected, setSelected] = useState<Record<string, boolean>>({})
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [trashing, setTrashing] = useState(false)
+  const [applying, setApplying] = useState(false)
 
   const loadStatus = useCallback(async () => {
     setLoading(true)
@@ -94,7 +108,8 @@ export function EmmaGmailPanel() {
     }
     setConnected(false)
     setMailbox(null)
-    setSuggestions([])
+    setDraftsCreated([])
+    setCleanup([])
     toast.success("Gmail disconnected")
   }
 
@@ -123,46 +138,61 @@ export function EmmaGmailPanel() {
   const scanInbox = async () => {
     setScanning(true)
     try {
-      const res = await fetch("/api/gmail/inbox/suggestions")
+      const res = await fetch("/api/gmail/inbox/triage", { method: "POST" })
       const data = await res.json()
       if (!res.ok) {
         toast.error(data.error || "Failed to scan inbox")
         return
       }
-      setSuggestions(data.suggestions || [])
       setScannedCount(data.scanned || 0)
+      setActiveThreads(data.activeThreadsConsidered || 0)
+      setDraftsCreated(data.draftsCreated || [])
+      setCleanup(data.cleanupSuggestions || [])
       setSelected({})
-      if (!(data.suggestions || []).length) {
-        toast.success(`Scanned ${data.scanned || 0} messages — no spam/solicitation suggestions`)
-      }
+
+      const drafted = (data.draftsCreated || []).length
+      const cleanupN = (data.cleanupSuggestions || []).length
+      toast.success(
+        `Scan done: ${drafted} reply draft(s) created, ${cleanupN} cleanup suggestion(s)`,
+      )
     } finally {
       setScanning(false)
     }
   }
 
-  const selectedIds = Object.entries(selected)
-    .filter(([, v]) => v)
-    .map(([id]) => id)
+  const selectedItems = cleanup.filter((c) => selected[c.messageId])
 
-  const trashSelected = async () => {
-    setTrashing(true)
+  const applyCleanup = async () => {
+    setApplying(true)
     try {
-      const res = await fetch("/api/gmail/inbox/trash", {
+      const res = await fetch("/api/gmail/inbox/cleanup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: true, messageIds: selectedIds }),
+        body: JSON.stringify({
+          confirm: true,
+          actions: selectedItems.map((c) => ({
+            messageId: c.messageId,
+            action: c.action,
+            listUnsubscribe: c.listUnsubscribe,
+            listUnsubscribePost: c.listUnsubscribePost,
+          })),
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
-        toast.error(data.error || "Failed to move to Trash")
+        toast.error(data.error || "Cleanup failed")
         return
       }
-      toast.success(`Moved ${data.trashed?.length || 0} message(s) to Trash`)
-      setSuggestions((prev) => prev.filter((s) => !data.trashed?.includes(s.messageId)))
+      const spamN = data.spam?.marked?.length || 0
+      const trashN = data.trash?.trashed?.length || 0
+      const unsubN = (data.unsubscribe || []).filter((u: { ok: boolean }) => u.ok).length
+      toast.success(`Applied: ${spamN} spam, ${trashN} trash, ${unsubN} unsubscribe`)
+      const doneIds = new Set(selectedItems.map((s) => s.messageId))
+      setCleanup((prev) => prev.filter((c) => !doneIds.has(c.messageId)))
       setSelected({})
       setConfirmOpen(false)
     } finally {
-      setTrashing(false)
+      setApplying(false)
     }
   }
 
@@ -186,8 +216,8 @@ export function EmmaGmailPanel() {
             Gmail connection
           </CardTitle>
           <CardDescription>
-            Connect Gmail so Emma can create drafts and suggest spam/solicitation cleanups. Messages are never
-            permanently deleted — confirmed actions only move mail to Trash.
+            Scan creates reply drafts for active threads automatically. Cleanup (spam / unsubscribe / trash)
+            still needs your confirmation. Emma never sends mail or permanently deletes messages.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
@@ -198,7 +228,7 @@ export function EmmaGmailPanel() {
             </p>
           ) : connected ? (
             <>
-              <Badge variant="outline" className="text-green-600 border-green-600/40">
+              <Badge variant="outline" className="border-green-600/40 text-green-600">
                 Connected · {mailbox}
               </Badge>
               <Button variant="outline" size="sm" onClick={disconnect}>
@@ -221,12 +251,102 @@ export function EmmaGmailPanel() {
         <>
           <Card className="border-border bg-card">
             <CardHeader className="pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Inbox className="h-4 w-4 text-primary" />
+                    Inbox scan
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Auto-drafts replies on active back-and-forth threads. Suggests spam, unsubscribe, and trash
+                    for the rest.
+                    {scannedCount
+                      ? ` Last scan: ${scannedCount} messages, ${activeThreads} active threads checked.`
+                      : ""}
+                  </CardDescription>
+                </div>
+                <Button size="sm" onClick={scanInbox} disabled={scanning}>
+                  {scanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Inbox className="mr-2 h-4 w-4" />}
+                  {scanning ? "Scanning…" : "Scan inbox"}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-foreground">Reply drafts created</h3>
+                {!draftsCreated.length ? (
+                  <p className="text-sm text-muted-foreground">
+                    No reply drafts yet. Run a scan — Emma auto-creates drafts only for active threads that need a
+                    response. Review them in Gmail Drafts before sending.
+                  </p>
+                ) : (
+                  <ul className="space-y-3">
+                    {draftsCreated.map((d) => (
+                      <li key={d.draftId} className="rounded-lg border border-border p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate text-sm font-medium">{d.replySubject || d.subject}</p>
+                          <Badge variant="secondary">draft saved</Badge>
+                        </div>
+                        <p className="mt-1 truncate text-xs text-muted-foreground">{d.from}</p>
+                        <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">{d.replyPreview}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-medium text-foreground">Cleanup suggestions</h3>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={!selectedItems.length}
+                    onClick={() => setConfirmOpen(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Apply selected ({selectedItems.length})
+                  </Button>
+                </div>
+                {!cleanup.length ? (
+                  <p className="text-sm text-muted-foreground">No cleanup suggestions from the last scan.</p>
+                ) : (
+                  <ul className="space-y-3">
+                    {cleanup.map((c) => (
+                      <li key={c.messageId} className="flex gap-3 rounded-lg border border-border p-3">
+                        <Checkbox
+                          checked={Boolean(selected[c.messageId])}
+                          onCheckedChange={(v) =>
+                            setSelected((prev) => ({ ...prev, [c.messageId]: v === true }))
+                          }
+                          className="mt-1"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate text-sm font-medium">{c.subject}</p>
+                            <Badge variant="outline">{c.action}</Badge>
+                            <Badge variant="secondary">{c.confidence}</Badge>
+                          </div>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">{c.from}</p>
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{c.snippet}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{c.reason}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <FileEdit className="h-4 w-4 text-primary" />
-                Create Gmail draft
+                Manual Gmail draft
               </CardTitle>
               <CardDescription>
-                Save a draft in your Gmail Drafts folder (not sent). Use chat with Emma to refine copy first if you want.
+                Optional fallback — save any draft directly (not sent). Prefer Scan for thread replies.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -257,7 +377,7 @@ export function EmmaGmailPanel() {
                   id="emma-body"
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
-                  rows={6}
+                  rows={5}
                   placeholder="Email body…"
                   className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
@@ -268,85 +388,22 @@ export function EmmaGmailPanel() {
               </Button>
             </CardContent>
           </Card>
-
-          <Card className="border-border bg-card">
-            <CardHeader className="pb-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Inbox className="h-4 w-4 text-primary" />
-                    Spam & solicitation suggestions
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    Scans recent inbox mail and suggests cleanup. Review before moving anything to Trash.
-                    {scannedCount ? ` Last scan: ${scannedCount} messages.` : ""}
-                  </CardDescription>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={scanInbox} disabled={scanning}>
-                    {scanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Inbox className="mr-2 h-4 w-4" />}
-                    Scan inbox
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={!selectedIds.length}
-                    onClick={() => setConfirmOpen(true)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Move selected to Trash ({selectedIds.length})
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {!suggestions.length ? (
-                <p className="text-sm text-muted-foreground">No suggestions yet. Run a scan to review your inbox.</p>
-              ) : (
-                <ul className="space-y-3">
-                  {suggestions.map((s) => (
-                    <li
-                      key={s.messageId}
-                      className="flex gap-3 rounded-lg border border-border p-3"
-                    >
-                      <Checkbox
-                        checked={Boolean(selected[s.messageId])}
-                        onCheckedChange={(v) =>
-                          setSelected((prev) => ({ ...prev, [s.messageId]: v === true }))
-                        }
-                        className="mt-1"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate text-sm font-medium text-foreground">{s.subject}</p>
-                          <Badge variant="outline">{s.classification}</Badge>
-                          <Badge variant="secondary">{s.confidence}</Badge>
-                        </div>
-                        <p className="mt-1 truncate text-xs text-muted-foreground">{s.from}</p>
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{s.snippet}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{s.reason}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
         </>
       )}
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Move {selectedIds.length} message(s) to Trash?</AlertDialogTitle>
+            <AlertDialogTitle>Apply {selectedItems.length} cleanup action(s)?</AlertDialogTitle>
             <AlertDialogDescription>
-              This moves selected Gmail messages to Trash (recoverable). Emma will not permanently delete mail.
+              Selected messages will be marked Spam, unsubscribed (when possible), and/or moved to Trash. Nothing is
+              permanently deleted. Mailto-only unsubscribe links are noted and the message is still moved to Trash.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={trashing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={trashSelected} disabled={trashing}>
-              {trashing ? "Moving…" : "Confirm move to Trash"}
+            <AlertDialogCancel disabled={applying}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={applyCleanup} disabled={applying}>
+              {applying ? "Applying…" : "Confirm cleanup"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
