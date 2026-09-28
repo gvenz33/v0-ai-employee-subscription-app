@@ -44,6 +44,16 @@ type CleanupSuggestion = {
   listUnsubscribePost?: string
 }
 
+type SeenMessage = {
+  messageId: string
+  threadId: string
+  from: string
+  subject: string
+  snippet: string
+  unread: boolean
+  date: string
+}
+
 export function EmmaGmailPanel() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -59,7 +69,9 @@ export function EmmaGmailPanel() {
 
   const [scanning, setScanning] = useState(false)
   const [scannedCount, setScannedCount] = useState(0)
+  const [unreadCount, setUnreadCount] = useState(0)
   const [activeThreads, setActiveThreads] = useState(0)
+  const [seenMessages, setSeenMessages] = useState<SeenMessage[]>([])
   const [draftsCreated, setDraftsCreated] = useState<DraftCreated[]>([])
   const [cleanup, setCleanup] = useState<CleanupSuggestion[]>([])
   const [selected, setSelected] = useState<Record<string, boolean>>({})
@@ -145,16 +157,24 @@ export function EmmaGmailPanel() {
         return
       }
       setScannedCount(data.scanned || 0)
-      setActiveThreads(data.activeThreadsConsidered || 0)
+      setUnreadCount(data.unread || 0)
+      setActiveThreads(data.activeThreadsFound ?? data.activeThreadsConsidered ?? 0)
+      setSeenMessages(data.seenMessages || [])
       setDraftsCreated(data.draftsCreated || [])
       setCleanup(data.cleanupSuggestions || [])
       setSelected({})
 
       const drafted = (data.draftsCreated || []).length
       const cleanupN = (data.cleanupSuggestions || []).length
-      toast.success(
-        `Scan done: ${drafted} reply draft(s) created, ${cleanupN} cleanup suggestion(s)`,
-      )
+      const scanned = data.scanned || 0
+      const unread = data.unread || 0
+      if (scanned === 0) {
+        toast.message("Gmail returned 0 inbox messages in the last 30 days for this connected account")
+      } else {
+        toast.success(
+          `Read ${scanned} messages (${unread} unread) → ${drafted} reply draft(s), ${cleanupN} cleanup`,
+        )
+      }
     } finally {
       setScanning(false)
     }
@@ -258,10 +278,10 @@ export function EmmaGmailPanel() {
                     Inbox scan
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    Auto-drafts replies on active back-and-forth threads. Suggests spam, unsubscribe, and trash
-                    for the rest.
+                    Prioritizes unread inbox mail (last 30 days). Auto-drafts replies only on active
+                    back-and-forth threads. Suggests spam / unsubscribe / trash for the rest.
                     {scannedCount
-                      ? ` Last scan: ${scannedCount} messages, ${activeThreads} active threads checked.`
+                      ? ` Last scan: ${scannedCount} messages (${unreadCount} unread), ${activeThreads} active threads.`
                       : ""}
                   </CardDescription>
                 </div>
@@ -272,12 +292,38 @@ export function EmmaGmailPanel() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              {seenMessages.length > 0 && (
+                <div>
+                  <h3 className="mb-2 text-sm font-medium text-foreground">Messages Emma read</h3>
+                  <ul className="max-h-48 space-y-2 overflow-y-auto">
+                    {seenMessages.map((m) => (
+                      <li
+                        key={m.messageId}
+                        className="rounded-md border border-border/60 px-3 py-2 text-xs"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="truncate font-medium text-foreground">{m.subject}</span>
+                          {m.unread ? <Badge variant="secondary">unread</Badge> : null}
+                        </div>
+                        <p className="mt-0.5 truncate text-muted-foreground">{m.from}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  {scannedCount > seenMessages.length ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Showing {seenMessages.length} of {scannedCount} scanned.
+                    </p>
+                  ) : null}
+                </div>
+              )}
+
               <div>
                 <h3 className="mb-2 text-sm font-medium text-foreground">Reply drafts created</h3>
                 {!draftsCreated.length ? (
                   <p className="text-sm text-muted-foreground">
-                    No reply drafts yet. Run a scan — Emma auto-creates drafts only for active threads that need a
-                    response. Review them in Gmail Drafts before sending.
+                    No reply drafts. Emma only auto-drafts when there is an active thread (2+ messages already
+                    back-and-forth) and the latest message needs a response. Cold/first-touch unread mail is
+                    listed above but not auto-drafted.
                   </p>
                 ) : (
                   <ul className="space-y-3">

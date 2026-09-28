@@ -73,6 +73,21 @@ export function suggestSpamOrSolicitations(messages: GmailMessageSummary[]): Spa
         confidence: "medium",
         reason: "Promotional sender + offer-style subject",
       })
+      continue
+    }
+
+    // Many newsletters only expose List-Unsubscribe — still suggest unsubscribe
+    if (hasUnsubscribe) {
+      suggestions.push({
+        messageId: msg.id,
+        from: msg.from,
+        subject: msg.subject,
+        snippet: msg.snippet,
+        date: msg.date,
+        classification: "solicitation",
+        confidence: "medium",
+        reason: "Has List-Unsubscribe (typical newsletter / promo)",
+      })
     }
   }
 

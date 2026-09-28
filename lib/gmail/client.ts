@@ -153,46 +153,79 @@ export type GmailMessageSummary = {
   labels: string[]
 }
 
+async function gmailListMessageIds(
+  accessToken: string,
+  query: string,
+  maxResults: number,
+): Promise<string[]> {
+  const listRes = await fetch(
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${maxResults}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  const listData = await listRes.json()
+  if (!listRes.ok) {
+    throw new Error(listData.error?.message || `Failed to list Gmail: ${query}`)
+  }
+  return (listData.messages || []).map((m: { id: string }) => m.id)
+}
+
+async function gmailFetchMessageSummary(
+  accessToken: string,
+  id: string,
+): Promise<GmailMessageSummary | null> {
+  const msgRes = await fetch(
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=List-Unsubscribe&metadataHeaders=List-Unsubscribe-Post&metadataHeaders=Precedence`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  const msg = await msgRes.json()
+  if (!msgRes.ok) return null
+  const headers: GmailHeaderMap = {}
+  for (const h of msg.payload?.headers || []) {
+    headers[String(h.name).toLowerCase()] = String(h.value || "")
+  }
+  return {
+    id: msg.id,
+    threadId: msg.threadId,
+    snippet: msg.snippet || "",
+    from: headers.from || "",
+    subject: headers.subject || "(no subject)",
+    date: headers.date || "",
+    listUnsubscribe: headers["list-unsubscribe"] || "",
+    labels: msg.labelIds || [],
+  }
+}
+
+/** Unread inbox first, then recent inbox — so Emma actually sees current unread mail. */
 export async function gmailListRecentInbox(input: {
   accessToken: string
   maxResults?: number
 }): Promise<GmailMessageSummary[]> {
-  const maxResults = Math.min(input.maxResults ?? 20, 40)
-  const listRes = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent("in:inbox newer_than:14d")}&maxResults=${maxResults}`,
-    { headers: { Authorization: `Bearer ${input.accessToken}` } },
+  const maxResults = Math.min(input.maxResults ?? 30, 50)
+  const unreadIds = await gmailListMessageIds(
+    input.accessToken,
+    "in:inbox is:unread newer_than:30d",
+    maxResults,
   )
-  const listData = await listRes.json()
-  if (!listRes.ok) {
-    throw new Error(listData.error?.message || "Failed to list Gmail inbox")
+  const recentIds = await gmailListMessageIds(
+    input.accessToken,
+    "in:inbox newer_than:30d",
+    maxResults,
+  )
+
+  const orderedIds: string[] = []
+  const seen = new Set<string>()
+  for (const id of [...unreadIds, ...recentIds]) {
+    if (seen.has(id)) continue
+    seen.add(id)
+    orderedIds.push(id)
+    if (orderedIds.length >= maxResults) break
   }
 
-  const ids: string[] = (listData.messages || []).map((m: { id: string }) => m.id)
   const out: GmailMessageSummary[] = []
-
-  for (const id of ids) {
-    const msgRes = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=List-Unsubscribe&metadataHeaders=Precedence`,
-      { headers: { Authorization: `Bearer ${input.accessToken}` } },
-    )
-    const msg = await msgRes.json()
-    if (!msgRes.ok) continue
-    const headers: GmailHeaderMap = {}
-    for (const h of msg.payload?.headers || []) {
-      headers[String(h.name).toLowerCase()] = String(h.value || "")
-    }
-    out.push({
-      id: msg.id,
-      threadId: msg.threadId,
-      snippet: msg.snippet || "",
-      from: headers.from || "",
-      subject: headers.subject || "(no subject)",
-      date: headers.date || "",
-      listUnsubscribe: headers["list-unsubscribe"] || "",
-      labels: msg.labelIds || [],
-    })
+  for (const id of orderedIds) {
+    const summary = await gmailFetchMessageSummary(input.accessToken, id)
+    if (summary) out.push(summary)
   }
-
   return out
 }
 

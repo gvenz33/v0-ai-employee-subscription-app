@@ -9,7 +9,9 @@ import {
 } from "@/lib/gmail/client"
 import {
   buildCleanupSuggestions,
+  mergeCleanupSuggestions,
   triageActiveThreadsForReplies,
+  triageCleanupWithAi,
   type DraftResult,
 } from "@/lib/gmail/triage"
 import { recordAuditLog } from "@/lib/audit-log"
@@ -22,7 +24,18 @@ export async function POST(request: Request) {
 
   try {
     const { accessToken, email } = await getValidGmailAccessToken(gate.userId)
-    const summaries = await gmailListRecentInbox({ accessToken, maxResults: 25 })
+    const summaries = await gmailListRecentInbox({ accessToken, maxResults: 30 })
+
+    const unreadCount = summaries.filter((m) => m.labels.includes("UNREAD")).length
+    const seenMessages = summaries.slice(0, 15).map((m) => ({
+      messageId: m.id,
+      threadId: m.threadId,
+      from: m.from,
+      subject: m.subject,
+      snippet: m.snippet,
+      unread: m.labels.includes("UNREAD"),
+      date: m.date,
+    }))
 
     // Unique threads from inbox list
     const threadIds = [...new Set(summaries.map((m) => m.threadId))]
@@ -36,17 +49,30 @@ export async function POST(request: Request) {
       (t) => t.isActiveThread && !t.latestFromUser && t.messageCount >= 2,
     )
 
-    // Limit AI reply batch size
     const replyCandidates = activeForReply.slice(0, 8)
-    const replyDecisions = await triageActiveThreadsForReplies(replyCandidates, email)
+    const replyDecisions =
+      replyCandidates.length > 0
+        ? await triageActiveThreadsForReplies(replyCandidates, email)
+        : []
 
     const draftsCreated: DraftResult[] = []
     const draftFailures: Array<{ threadId: string; error: string }> = []
     const draftedMessageIds = new Set<string>()
     const draftedThreadIds = new Set<string>()
+    const replySkipped: Array<{ threadId: string; subject: string; reason: string }> = []
 
     for (const decision of replyDecisions) {
-      if (!decision.needsReply || !decision.replyBody) continue
+      if (!decision.needsReply || !decision.replyBody) {
+        const thread = replyCandidates.find((t) => t.threadId === decision.threadId)
+        if (thread) {
+          replySkipped.push({
+            threadId: decision.threadId,
+            subject: thread.latest.subject,
+            reason: decision.reason || "No reply needed",
+          })
+        }
+        continue
+      }
       if (draftedThreadIds.has(decision.threadId)) continue
 
       const thread = replyCandidates.find((t) => t.threadId === decision.threadId)
@@ -64,10 +90,11 @@ export async function POST(request: Request) {
           body: decision.replyBody,
           threadId: thread.threadId,
           inReplyTo: thread.latest.messageIdHeader || undefined,
-          references: [thread.latest.references, thread.latest.messageIdHeader]
-            .filter(Boolean)
-            .join(" ")
-            .trim() || undefined,
+          references:
+            [thread.latest.references, thread.latest.messageIdHeader]
+              .filter(Boolean)
+              .join(" ")
+              .trim() || undefined,
         })
         draftsCreated.push({
           threadId: thread.threadId,
@@ -100,22 +127,37 @@ export async function POST(request: Request) {
         }
       }
     }
+    // Also from list metadata
+    for (const s of summaries) {
+      if (s.listUnsubscribe && !unsubscribeHeaders[s.id]) {
+        unsubscribeHeaders[s.id] = { listUnsubscribe: s.listUnsubscribe }
+      }
+    }
 
-    // Prefer latest message per thread for cleanup list
     const latestByThread = new Map<string, (typeof summaries)[0]>()
     for (const s of summaries) {
-      const existing = latestByThread.get(s.threadId)
-      if (!existing) latestByThread.set(s.threadId, s)
+      if (!latestByThread.has(s.threadId)) latestByThread.set(s.threadId, s)
     }
     const cleanupPool = [...latestByThread.values()].filter(
       (s) => !draftedThreadIds.has(s.threadId),
     )
 
-    const cleanupSuggestions = buildCleanupSuggestions({
+    const heuristicCleanup = buildCleanupSuggestions({
       summaries: cleanupPool,
       unsubscribeHeaders,
       skipMessageIds: draftedMessageIds,
     })
+
+    const alreadyFlagged = new Set(heuristicCleanup.map((c) => c.messageId))
+    const aiPool = cleanupPool.filter((m) => !alreadyFlagged.has(m.id) && !draftedMessageIds.has(m.id))
+    let aiCleanup: Awaited<ReturnType<typeof triageCleanupWithAi>> = []
+    try {
+      aiCleanup = await triageCleanupWithAi(aiPool, unsubscribeHeaders)
+    } catch {
+      aiCleanup = []
+    }
+
+    const cleanupSuggestions = mergeCleanupSuggestions(heuristicCleanup, aiCleanup)
 
     await recordAuditLog({
       workspaceOwnerId: gate.userId,
@@ -127,6 +169,7 @@ export async function POST(request: Request) {
       details: {
         mailbox: email,
         scanned: summaries.length,
+        unread: unreadCount,
         activeThreads: activeForReply.length,
         draftsCreated: draftsCreated.length,
         cleanupSuggestions: cleanupSuggestions.length,
@@ -137,9 +180,13 @@ export async function POST(request: Request) {
     return NextResponse.json({
       mailbox: email,
       scanned: summaries.length,
+      unread: unreadCount,
+      activeThreadsFound: activeForReply.length,
       activeThreadsConsidered: replyCandidates.length,
+      seenMessages,
       draftsCreated,
       draftFailures,
+      replySkipped,
       cleanupSuggestions,
     })
   } catch (error) {

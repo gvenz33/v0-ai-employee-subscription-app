@@ -183,13 +183,12 @@ export function buildCleanupSuggestions(input: {
     })
   }
 
-  // Also flag clear noreply marketing with unsubscribe even if heuristic missed
+  // Any remaining List-Unsubscribe mail → unsubscribe suggestion
   for (const m of input.summaries) {
     if (skip.has(m.id)) continue
     if (out.some((o) => o.messageId === m.id)) continue
-    const from = extractEmailAddress(m.from)
     const unsub = input.unsubscribeHeaders?.[m.id]?.listUnsubscribe || m.listUnsubscribe
-    if (unsub && /\b(noreply|no-reply|newsletter|marketing|promo)\b/i.test(from + m.from)) {
+    if (unsub) {
       out.push({
         messageId: m.id,
         threadId: m.threadId,
@@ -198,12 +197,103 @@ export function buildCleanupSuggestions(input: {
         snippet: m.snippet,
         action: "unsubscribe",
         confidence: "medium",
-        reason: "Promotional sender with List-Unsubscribe header",
+        reason: "Has List-Unsubscribe header",
         listUnsubscribe: unsub,
         listUnsubscribePost: input.unsubscribeHeaders?.[m.id]?.listUnsubscribePost,
       })
     }
   }
 
+  return out
+}
+
+const CLEANUP_SYSTEM = `You are Emma triaging inbox messages for cleanup only (not replies).
+Classify each message as one of: spam, unsubscribe, trash, keep.
+- spam: scams, phishing, obvious junk
+- unsubscribe: newsletters, marketing, digests the user can leave
+- trash: low-value noise that is not worth keeping and not classic spam
+- keep: personal/work mail that should stay (including cold emails that may need a human reply later)
+Return ONLY a JSON array. No commentary.`
+
+export async function triageCleanupWithAi(
+  summaries: GmailMessageSummary[],
+  unsubscribeHeaders?: Record<string, { listUnsubscribe: string; listUnsubscribePost?: string }>,
+): Promise<CleanupSuggestion[]> {
+  if (!summaries.length) return []
+
+  const payload = summaries.slice(0, 20).map((m) => ({
+    messageId: m.id,
+    threadId: m.threadId,
+    from: m.from,
+    subject: m.subject,
+    snippet: m.snippet,
+    unread: m.labels.includes("UNREAD"),
+    hasUnsubscribe: Boolean(
+      m.listUnsubscribe || unsubscribeHeaders?.[m.id]?.listUnsubscribe,
+    ),
+  }))
+
+  const { text } = await generateText({
+    model: PRIMARY_AI_MODEL,
+    system: CLEANUP_SYSTEM,
+    prompt: `Classify these inbox messages:
+${JSON.stringify(payload, null, 2)}
+
+Return JSON array:
+[
+  {
+    "messageId": string,
+    "action": "spam" | "unsubscribe" | "trash" | "keep",
+    "confidence": "high" | "medium",
+    "reason": string
+  }
+]`,
+  })
+
+  const items = parseJsonArray<{
+    messageId?: string
+    action?: string
+    confidence?: string
+    reason?: string
+  }>(text)
+
+  const byId = new Map(summaries.map((m) => [m.id, m]))
+  const out: CleanupSuggestion[] = []
+
+  for (const item of items) {
+    if (!item.messageId || !item.action || item.action === "keep") continue
+    if (!["spam", "unsubscribe", "trash"].includes(item.action)) continue
+    const m = byId.get(item.messageId)
+    if (!m) continue
+    const unsub = unsubscribeHeaders?.[m.id]
+    out.push({
+      messageId: m.id,
+      threadId: m.threadId,
+      from: m.from,
+      subject: m.subject,
+      snippet: m.snippet,
+      action: item.action as CleanupSuggestion["action"],
+      confidence: item.confidence === "high" ? "high" : "medium",
+      reason: item.reason || "AI cleanup suggestion",
+      listUnsubscribe: unsub?.listUnsubscribe || m.listUnsubscribe || undefined,
+      listUnsubscribePost: unsub?.listUnsubscribePost,
+    })
+  }
+
+  return out
+}
+
+export function mergeCleanupSuggestions(
+  ...lists: CleanupSuggestion[][]
+): CleanupSuggestion[] {
+  const out: CleanupSuggestion[] = []
+  const seen = new Set<string>()
+  for (const list of lists) {
+    for (const item of list) {
+      if (seen.has(item.messageId)) continue
+      seen.add(item.messageId)
+      out.push(item)
+    }
+  }
   return out
 }
