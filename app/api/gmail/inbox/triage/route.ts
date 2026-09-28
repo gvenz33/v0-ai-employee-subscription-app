@@ -1,163 +1,49 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { requireEmailAssistantAccess } from "@/lib/gmail/access"
 import {
-  extractEmailAddress,
   getValidGmailAccessToken,
-  gmailCreateReplyDraft,
-  gmailGetThread,
-  gmailListRecentInbox,
+  listGmailConnections,
 } from "@/lib/gmail/client"
-import {
-  buildCleanupSuggestions,
-  mergeCleanupSuggestions,
-  triageActiveThreadsForReplies,
-  triageCleanupWithAi,
-  type DraftResult,
-} from "@/lib/gmail/triage"
+import { runInboxTriageForMailbox } from "@/lib/gmail/run-inbox-triage"
 import { recordAuditLog } from "@/lib/audit-log"
 
 export const maxDuration = 60
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const gate = await requireEmailAssistantAccess()
   if (!gate.ok) return gate.response
 
   try {
-    const { accessToken, email } = await getValidGmailAccessToken(gate.userId)
-    const summaries = await gmailListRecentInbox({ accessToken, maxResults: 30 })
+    const body = await request.json().catch(() => ({}))
+    const requestedIds: string[] | undefined = Array.isArray(body?.connectionIds)
+      ? body.connectionIds.filter((id: unknown) => typeof id === "string")
+      : body?.connectionId
+        ? [String(body.connectionId)]
+        : undefined
 
-    const unreadCount = summaries.filter((m) => m.labels.includes("UNREAD")).length
-    const seenMessages = summaries.slice(0, 15).map((m) => ({
-      messageId: m.id,
-      threadId: m.threadId,
-      from: m.from,
-      subject: m.subject,
-      snippet: m.snippet,
-      unread: m.labels.includes("UNREAD"),
-      date: m.date,
-    }))
-
-    // Unique threads from inbox list
-    const threadIds = [...new Set(summaries.map((m) => m.threadId))]
-    const threads = []
-    for (const threadId of threadIds.slice(0, 20)) {
-      const t = await gmailGetThread({ accessToken, threadId, userEmail: email })
-      if (t) threads.push(t)
+    const connections = await listGmailConnections(gate.userId)
+    if (!connections.length) {
+      return NextResponse.json({ error: "Gmail is not connected" }, { status: 400 })
     }
 
-    const activeForReply = threads.filter(
-      (t) => t.isActiveThread && !t.latestFromUser && t.messageCount >= 2,
-    )
+    const targets = requestedIds?.length
+      ? connections.filter((c) => requestedIds.includes(c.id))
+      : connections
 
-    const replyCandidates = activeForReply.slice(0, 8)
-    const replyDecisions =
-      replyCandidates.length > 0
-        ? await triageActiveThreadsForReplies(replyCandidates, email)
-        : []
-
-    const draftsCreated: DraftResult[] = []
-    const draftFailures: Array<{ threadId: string; error: string }> = []
-    const draftedMessageIds = new Set<string>()
-    const draftedThreadIds = new Set<string>()
-    const replySkipped: Array<{ threadId: string; subject: string; reason: string }> = []
-
-    for (const decision of replyDecisions) {
-      if (!decision.needsReply || !decision.replyBody) {
-        const thread = replyCandidates.find((t) => t.threadId === decision.threadId)
-        if (thread) {
-          replySkipped.push({
-            threadId: decision.threadId,
-            subject: thread.latest.subject,
-            reason: decision.reason || "No reply needed",
-          })
-        }
-        continue
-      }
-      if (draftedThreadIds.has(decision.threadId)) continue
-
-      const thread = replyCandidates.find((t) => t.threadId === decision.threadId)
-      if (!thread) continue
-
-      const to = extractEmailAddress(thread.latest.from)
-      if (!to || to === email.toLowerCase()) continue
-
-      try {
-        const draft = await gmailCreateReplyDraft({
-          accessToken,
-          from: email,
-          to,
-          subject: decision.replySubject || thread.latest.subject,
-          body: decision.replyBody,
-          threadId: thread.threadId,
-          inReplyTo: thread.latest.messageIdHeader || undefined,
-          references:
-            [thread.latest.references, thread.latest.messageIdHeader]
-              .filter(Boolean)
-              .join(" ")
-              .trim() || undefined,
-        })
-        draftsCreated.push({
-          threadId: thread.threadId,
-          messageId: thread.latest.id,
-          from: thread.latest.from,
-          subject: thread.latest.subject,
-          draftId: draft.draftId,
-          replySubject: decision.replySubject || thread.latest.subject,
-          replyPreview: decision.replyBody.slice(0, 280),
-        })
-        draftedMessageIds.add(thread.latest.id)
-        draftedThreadIds.add(thread.threadId)
-      } catch (e) {
-        draftFailures.push({
-          threadId: decision.threadId,
-          error: e instanceof Error ? e.message : "Draft failed",
-        })
-      }
+    if (!targets.length) {
+      return NextResponse.json({ error: "No matching Gmail accounts to scan" }, { status: 400 })
     }
 
-    const unsubscribeHeaders: Record<
-      string,
-      { listUnsubscribe: string; listUnsubscribePost?: string }
-    > = {}
-    for (const t of threads) {
-      if (t.latest.listUnsubscribe) {
-        unsubscribeHeaders[t.latest.id] = {
-          listUnsubscribe: t.latest.listUnsubscribe,
-          listUnsubscribePost: t.latest.listUnsubscribePost || undefined,
-        }
-      }
+    const results = []
+    for (const conn of targets.slice(0, 20)) {
+      const { accessToken, email } = await getValidGmailAccessToken(gate.userId, conn.id)
+      const result = await runInboxTriageForMailbox({
+        accessToken,
+        email,
+        autoCreateDrafts: true,
+      })
+      results.push({ connectionId: conn.id, ...result })
     }
-    // Also from list metadata
-    for (const s of summaries) {
-      if (s.listUnsubscribe && !unsubscribeHeaders[s.id]) {
-        unsubscribeHeaders[s.id] = { listUnsubscribe: s.listUnsubscribe }
-      }
-    }
-
-    const latestByThread = new Map<string, (typeof summaries)[0]>()
-    for (const s of summaries) {
-      if (!latestByThread.has(s.threadId)) latestByThread.set(s.threadId, s)
-    }
-    const cleanupPool = [...latestByThread.values()].filter(
-      (s) => !draftedThreadIds.has(s.threadId),
-    )
-
-    const heuristicCleanup = buildCleanupSuggestions({
-      summaries: cleanupPool,
-      unsubscribeHeaders,
-      skipMessageIds: draftedMessageIds,
-    })
-
-    const alreadyFlagged = new Set(heuristicCleanup.map((c) => c.messageId))
-    const aiPool = cleanupPool.filter((m) => !alreadyFlagged.has(m.id) && !draftedMessageIds.has(m.id))
-    let aiCleanup: Awaited<ReturnType<typeof triageCleanupWithAi>> = []
-    try {
-      aiCleanup = await triageCleanupWithAi(aiPool, unsubscribeHeaders)
-    } catch {
-      aiCleanup = []
-    }
-
-    const cleanupSuggestions = mergeCleanupSuggestions(heuristicCleanup, aiCleanup)
 
     await recordAuditLog({
       workspaceOwnerId: gate.userId,
@@ -167,27 +53,37 @@ export async function POST(request: Request) {
       resourceType: "gmail_inbox",
       resourceId: gate.userId,
       details: {
-        mailbox: email,
-        scanned: summaries.length,
-        unread: unreadCount,
-        activeThreads: activeForReply.length,
-        draftsCreated: draftsCreated.length,
-        cleanupSuggestions: cleanupSuggestions.length,
+        accounts: results.map((r) => ({
+          mailbox: r.mailbox,
+          scanned: r.scanned,
+          unread: r.unread,
+          draftsCreated: r.draftsCreated.length,
+          cleanupSuggestions: r.cleanupSuggestions.length,
+        })),
       },
       request,
     })
 
+    // Backward-compatible flat fields from first mailbox + aggregated arrays
+    const first = results[0]
     return NextResponse.json({
-      mailbox: email,
-      scanned: summaries.length,
-      unread: unreadCount,
-      activeThreadsFound: activeForReply.length,
-      activeThreadsConsidered: replyCandidates.length,
-      seenMessages,
-      draftsCreated,
-      draftFailures,
-      replySkipped,
-      cleanupSuggestions,
+      results,
+      mailbox: first.mailbox,
+      scanned: results.reduce((n, r) => n + r.scanned, 0),
+      unread: results.reduce((n, r) => n + r.unread, 0),
+      activeThreadsFound: results.reduce((n, r) => n + r.activeThreadsFound, 0),
+      activeThreadsConsidered: results.reduce((n, r) => n + r.activeThreadsConsidered, 0),
+      seenMessages: results.flatMap((r) =>
+        r.seenMessages.map((m) => ({ ...m, mailbox: r.mailbox })),
+      ),
+      draftsCreated: results.flatMap((r) =>
+        r.draftsCreated.map((d) => ({ ...d, mailbox: r.mailbox })),
+      ),
+      draftFailures: results.flatMap((r) => r.draftFailures),
+      replySkipped: results.flatMap((r) => r.replySkipped),
+      cleanupSuggestions: results.flatMap((r) =>
+        r.cleanupSuggestions.map((c) => ({ ...c, mailbox: r.mailbox })),
+      ),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Inbox triage failed"

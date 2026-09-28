@@ -8,6 +8,7 @@ const bodySchema = z.object({
   to: z.string().email().max(320),
   subject: z.string().min(1).max(300),
   body: z.string().min(1).max(50_000),
+  connectionId: z.string().uuid().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -21,7 +22,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { accessToken, email } = await getValidGmailAccessToken(gate.userId)
+    const { accessToken, email } = await getValidGmailAccessToken(
+      gate.userId,
+      parsed.data.connectionId,
+    )
     const draft = await gmailCreateDraft({
       accessToken,
       from: email,

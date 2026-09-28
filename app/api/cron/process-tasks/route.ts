@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js"
 import { generateText } from "ai"
 import { AI_EMPLOYEES } from "@/lib/products"
 import { runDueScheduledAutomations } from "@/lib/run-scheduled-automations"
+import { runDueEmmaScans } from "@/lib/run-emma-scans"
 import { guardTenantApiAccess } from "@/lib/tenant-api-quota"
 import { NextResponse } from "next/server"
 
@@ -131,6 +132,13 @@ export async function GET(request: Request) {
     console.error("Scheduled automations cron error:", e)
   }
 
+  let emmaScans = { processed: 0, failed: 0, skipped: 0 }
+  try {
+    emmaScans = await runDueEmmaScans(supabase, { abuseRequest: request })
+  } catch (e) {
+    console.error("Emma scan cron error:", e)
+  }
+
   return NextResponse.json({
     message: "Cron run complete",
     tasks: {
@@ -139,5 +147,6 @@ export async function GET(request: Request) {
       total: tasks?.length ?? 0,
     },
     scheduled_automations: scheduled,
+    emma_scans: emmaScans,
   })
 }

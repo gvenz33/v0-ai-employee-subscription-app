@@ -11,6 +11,7 @@ import { recordAuditLog } from "@/lib/audit-log"
 
 const bodySchema = z.object({
   confirm: z.literal(true),
+  connectionId: z.string().uuid().optional(),
   actions: z
     .array(
       z.object({
@@ -41,7 +42,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { accessToken, email } = await getValidGmailAccessToken(gate.userId)
+    const { accessToken, email } = await getValidGmailAccessToken(
+      gate.userId,
+      parsed.data.connectionId,
+    )
 
     const spamIds = parsed.data.actions.filter((a) => a.action === "spam").map((a) => a.messageId)
     const trashIds = parsed.data.actions.filter((a) => a.action === "trash").map((a) => a.messageId)

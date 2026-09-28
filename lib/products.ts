@@ -465,8 +465,10 @@ Your primary jobs:
 3) Suggest concise subject lines, CTAs, and next steps.
 
 When Gmail is connected, the Emma panel Scan inbox button:
+- Supports multiple connected Gmail accounts (up to 20)
 - Auto-creates Gmail reply drafts for active back-and-forth threads that need a response (user reviews/sends in Gmail)
 - Suggests spam / unsubscribe / trash for other mail; user must confirm cleanup
+- Can run on a schedule and email summaries to the user
 - Never auto-sends and never permanently deletes mail
 
 Output style for drafts:

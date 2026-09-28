@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { randomBytes } from "crypto"
 import { requireEmailAssistantAccess } from "@/lib/gmail/access"
 import { buildGoogleAuthUrl, signOAuthState } from "@/lib/gmail/oauth"
+import { countGmailConnections, MAX_GMAIL_ACCOUNTS } from "@/lib/gmail/client"
 
 export async function GET(request: Request) {
   const gate = await requireEmailAssistantAccess()
@@ -21,6 +22,16 @@ export async function GET(request: Request) {
     return NextResponse.json(
       { error: "AUTOMATION_EMAIL_SECRET must be set to store Gmail tokens securely." },
       { status: 503 },
+    )
+  }
+
+  const count = await countGmailConnections(gate.userId)
+  if (count >= MAX_GMAIL_ACCOUNTS) {
+    return NextResponse.json(
+      {
+        error: `You already connected ${MAX_GMAIL_ACCOUNTS} Gmail accounts (maximum). Disconnect one to add another.`,
+      },
+      { status: 400 },
     )
   }
 

@@ -8,7 +8,10 @@ import {
   refreshAccessToken,
 } from "@/lib/gmail/oauth"
 
+export const MAX_GMAIL_ACCOUNTS = 20
+
 export type GmailConnectionRow = {
+  id: string
   user_id: string
   email: string
   access_token_encrypted: string
@@ -18,15 +21,39 @@ export type GmailConnectionRow = {
   connected_at?: string | null
 }
 
-export async function getGmailConnection(userId: string): Promise<GmailConnectionRow | null> {
+export async function listGmailConnections(userId: string): Promise<GmailConnectionRow[]> {
   const admin = getSupabaseAdmin()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (admin as any)
     .from("user_gmail_connections")
     .select("*")
     .eq("user_id", userId)
-    .maybeSingle()
+    .order("connected_at", { ascending: true })
+  return (data as GmailConnectionRow[]) || []
+}
+
+export async function getGmailConnection(
+  userId: string,
+  connectionId?: string | null,
+): Promise<GmailConnectionRow | null> {
+  const admin = getSupabaseAdmin()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q = (admin as any).from("user_gmail_connections").select("*").eq("user_id", userId)
+  if (connectionId) {
+    q = q.eq("id", connectionId)
+  }
+  const { data } = await q.limit(1).maybeSingle()
   return (data as GmailConnectionRow | null) ?? null
+}
+
+export async function countGmailConnections(userId: string): Promise<number> {
+  const admin = getSupabaseAdmin()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count } = await (admin as any)
+    .from("user_gmail_connections")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+  return count ?? 0
 }
 
 export async function upsertGmailConnection(input: {
@@ -36,49 +63,85 @@ export async function upsertGmailConnection(input: {
   refreshToken: string
   expiresIn: number
   scope?: string
-}) {
+}): Promise<GmailConnectionRow> {
   const admin = getSupabaseAdmin()
+  const email = input.email.toLowerCase()
   const expiresAt = new Date(Date.now() + Math.max(60, input.expiresIn - 60) * 1000).toISOString()
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (admin as any).from("user_gmail_connections").upsert(
-    {
-      user_id: input.userId,
-      email: input.email,
-      access_token_encrypted: encryptToken(input.accessToken),
-      refresh_token_encrypted: encryptToken(input.refreshToken),
-      token_expires_at: expiresAt,
-      scope: input.scope || null,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id" },
-  )
+  const { data: existing } = await (admin as any)
+    .from("user_gmail_connections")
+    .select("id")
+    .eq("user_id", input.userId)
+    .eq("email", email)
+    .maybeSingle()
+
+  if (!existing) {
+    const n = await countGmailConnections(input.userId)
+    if (n >= MAX_GMAIL_ACCOUNTS) {
+      throw new Error(`You can connect up to ${MAX_GMAIL_ACCOUNTS} Gmail accounts.`)
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (admin as any)
+    .from("user_gmail_connections")
+    .upsert(
+      {
+        user_id: input.userId,
+        email,
+        access_token_encrypted: encryptToken(input.accessToken),
+        refresh_token_encrypted: encryptToken(input.refreshToken),
+        token_expires_at: expiresAt,
+        scope: input.scope || null,
+        updated_at: new Date().toISOString(),
+        ...(existing?.id ? { id: existing.id } : {}),
+      },
+      { onConflict: "user_id,email" },
+    )
+    .select("*")
+    .single()
+
   if (error) throw new Error(error.message)
+  return data as GmailConnectionRow
 }
 
-export async function deleteGmailConnection(userId: string) {
+export async function deleteGmailConnection(userId: string, connectionId?: string | null) {
   const admin = getSupabaseAdmin()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (admin as any).from("user_gmail_connections").delete().eq("user_id", userId)
+  let q = (admin as any).from("user_gmail_connections").delete().eq("user_id", userId)
+  if (connectionId) {
+    q = q.eq("id", connectionId)
+  }
+  await q
 }
 
 /** Returns a valid access token, refreshing when needed. */
-export async function getValidGmailAccessToken(userId: string): Promise<{
+export async function getValidGmailAccessToken(
+  userId: string,
+  connectionId?: string | null,
+): Promise<{
   accessToken: string
   email: string
+  connectionId: string
 }> {
-  const row = await getGmailConnection(userId)
+  const row = await getGmailConnection(userId, connectionId)
   if (!row) throw new Error("Gmail is not connected")
 
   const expiresAt = row.token_expires_at ? new Date(row.token_expires_at).getTime() : 0
   if (expiresAt > Date.now() + 60_000) {
-    return { accessToken: decryptToken(row.access_token_encrypted), email: row.email }
+    return {
+      accessToken: decryptToken(row.access_token_encrypted),
+      email: row.email,
+      connectionId: row.id,
+    }
   }
 
   const refreshToken = decryptToken(row.refresh_token_encrypted)
   const refreshed = await refreshAccessToken(refreshToken)
   const nextRefresh = refreshed.refresh_token || refreshToken
 
-  await upsertGmailConnection({
+  const updated = await upsertGmailConnection({
     userId,
     email: row.email,
     accessToken: refreshed.access_token,
@@ -87,7 +150,11 @@ export async function getValidGmailAccessToken(userId: string): Promise<{
     scope: refreshed.scope || row.scope || undefined,
   })
 
-  return { accessToken: refreshed.access_token, email: row.email }
+  return {
+    accessToken: refreshed.access_token,
+    email: row.email,
+    connectionId: updated.id || row.id,
+  }
 }
 
 export async function requireSessionUserId(): Promise<string | null> {
