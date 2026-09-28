@@ -3,7 +3,6 @@ import "server-only"
 import { generateText } from "ai"
 import { PRIMARY_AI_MODEL } from "@/lib/token-economics"
 import type { GmailActiveThread, GmailMessageSummary } from "@/lib/gmail/client"
-import { extractEmailAddress } from "@/lib/gmail/client"
 import { suggestSpamOrSolicitations } from "@/lib/gmail/spam-heuristics"
 
 export type TriageClassification = "needs_reply" | "spam" | "unsubscribe" | "trash" | "keep"
